@@ -5,9 +5,9 @@ simulate_snow_byilon <- function(ilon){
   convert_temp_watch <- function(x){ x - 273.15 }  # K -> degC
   convert_prec_watch <- function(x){ x * 60 * 60 * 24 }  # kg/m2/s -> mm/day
 
-  dirn <- "~/mct/data/df_snow/"
+  dirn <- "data/df_snow/"
   filn <- paste0("df_snow_ilon_", ilon, ".RData")
-  if (!dir.exists(dirn)) system("mkdir -p ~/mct/data/df_snow")
+  if (!dir.exists(dirn)) system("mkdir -p data/df_snow")
   path <- paste0(dirn, filn)
 
   if (!file.exists(path)){

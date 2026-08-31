@@ -11,9 +11,9 @@ get_et_mm_byilon <- function(ilon_hires){
   source("R/convert_et.R")
   
   ## determine file name
-  dirn <- "~/mct/data/df_alexi_et_mm/"
+  dirn <- "data/df_alexi_et_mm/"
   filn <- paste0("df_alexi_et_mm_ilon_", ilon_hires, ".RData")
-  if (!dir.exists(dirn)) system("mkdir -p ~/mct/data/df_alexi_et_mm")
+  if (!dir.exists(dirn)) system("mkdir -p data/df_alexi_et_mm")
   path <- paste0(dirn, filn)
   
   if (!file.exists(path)){

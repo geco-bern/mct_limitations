@@ -1,8 +1,9 @@
 ## function to extract info by file
-extract_whc_byfil <- function(ifil){
+extract_whc_byfil <- function(ifil, batch_size = 10000L){
   
-  ## do it row by row to avoid apparent memory problems
-  extract_whc_row <- function(df){
+  ## Process bounded batches to avoid the old row-by-row bottleneck without
+  ## materialising every nested soil profile at once.
+  extract_whc_batch <- function(df){
     df %>% 
       tidyr::unnest(data_soiltext_top) %>%
       dplyr::select(lon, lat, fc_top = fc, pwp_top = pwp, whc_top = whc, data_soiltext_sub) %>%
@@ -12,7 +13,14 @@ extract_whc_byfil <- function(ifil){
   load(ifil) # should load 'df_whc'
   df_whc <- df_whc %>% 
     ungroup()
-  df <- purrr::map_dfr(as.list(seq(nrow(df_whc))), ~{slice(df_whc, .) %>% extract_whc_row()})
+  batches <- split(
+    seq_len(nrow(df_whc)),
+    ceiling(seq_len(nrow(df_whc)) / batch_size)
+  )
+  df <- purrr::map_dfr(
+    batches,
+    ~dplyr::slice(df_whc, .x) %>% extract_whc_batch()
+  )
   
   ## old version:
   # df <- df_whc %>% 

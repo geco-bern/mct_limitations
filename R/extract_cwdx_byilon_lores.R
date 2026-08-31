@@ -8,9 +8,9 @@ extract_cwdx_byilon_lores <- function(ilon, overwrite = FALSE){
     
     load(infil)
     
-    dirn <- "~/mct/data/df_cwdx_10_20_40_lores/"
+    dirn <- "data/df_cwdx_10_20_40_lores/"
     filn <- paste0("df_cwdx_10_20_40_ilon_", ilon, ".RData")
-    if (!dir.exists(dirn)) system("mkdir -p ~/mct/data/df_cwdx_10_20_40_lores")
+    if (!dir.exists(dirn)) system("mkdir -p data/df_cwdx_10_20_40_lores")
     path <- paste0(dirn, filn)
     
     if (!file.exists(path) || overwrite){

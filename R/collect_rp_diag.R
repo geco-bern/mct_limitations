@@ -1,7 +1,7 @@
 collect_rp_diag_nSIF <- function(ichunk){
   
   ## construct output file name
-  dirn <- "~/mct/data/df_rp_diag/"
+  dirn <- "data/df_rp_diag/"
   filn <- paste0("df_rp_diag_nSIF_ichunk_", ichunk, "_30.RData")
   path <- paste0(dirn, filn)
   
@@ -18,7 +18,7 @@ collect_rp_diag_nSIF <- function(ichunk){
 collect_rp_diag_fet <- function(ichunk){
   
   ## construct output file name
-  dirn <- "~/mct/data/df_rp_diag/"
+  dirn <- "data/df_rp_diag/"
   filn <- paste0("df_rp_diag_fet_ichunk_", ichunk, "_30.RData")
   path <- paste0(dirn, filn)
   

@@ -2,9 +2,9 @@ get_bal_byilon_lores <- function(ilon){
   
   source("R/get_bal.R")
   
-  dirn <- "~/mct/data/df_bal_lores/"
+  dirn <- "data/df_bal_lores/"
   filn <- paste0("df_bal_ilon_", ilon, ".RData")
-  if (!dir.exists(dirn)) system("mkdir -p ~/mct/data/df_bal_lores")
+  if (!dir.exists(dirn)) system("mkdir -p data/df_bal_lores")
   path_out <- paste0(dirn, filn)
 
   if (!file.exists(path_out)){
@@ -17,7 +17,7 @@ get_bal_byilon_lores <- function(ilon){
     path_pet <- paste0(dirn, filn)
       
     ## open snow file of corresponding longitude slice
-    dirn <- "~/mct/data/df_snow/"
+    dirn <- "data/df_snow/"
     filn <- paste0("df_snow_ilon_", ilon_lores, ".RData")
     path_snow <- paste0(dirn, filn)
     

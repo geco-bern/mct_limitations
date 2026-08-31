@@ -1,0 +1,723 @@
+---
+title: "Create Supplementary Information"
+author: "Beni Stocker"
+date: "2/1/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = here::here())
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rbeni)
+```
+
+## Testing $S_0$ diagnosing
+
+As testing sites, use sites from the rooting depth dataset (RSIP).
+
+```{r cars}
+df_sites <- read_csv("data/df_sites_rsip.csv")
+```
+
+Extract information of S0 diagnostic for given locations.
+
+Sample 30 sites out of the 1705.
+```{r}
+set.seed(1982)
+use_biomes <- df_sites |> 
+  group_by(biome) |> 
+  summarise(n = n()) |> 
+  dplyr::filter(n >=5 & !is.na(biome)) |> 
+  pull(biome)
+
+df_sites_sampled <- df_sites |> 
+  dplyr::filter(biome %in% use_biomes) |> 
+  group_by(biome) |> 
+  group_split() |> 
+  purrr::map(~sample_n(., 3)) |> 
+  bind_rows()
+```
+
+Plot sites on map
+```{r}
+library(jcolors)
+nbiomes <- df_sites_sampled |> 
+  drop_na(biome_name) |>
+  pull(biome_name) |> 
+  unique() |> 
+  length()
+
+plot_map_simpl() +
+  geom_point(data = df_sites_sampled,
+             aes(x = lon, y = lat, color = biome_name)) +
+  # scale_color_jcolors(palette = "pal8")
+  # scale_color_brewer(palette = "Paired")
+  scale_colour_manual(values = myjcolors(nbiomes), name = "Biome name")
+```
+
+Determine all chunks (latitudinal bands)
+```{r}
+get_ilon <- function(lon){
+  lon_hires <- seq(-179.975, 179.975, by = 0.05)
+  ilon <- which.min(abs(lon - lon_hires))
+  return(ilon)  
+}
+
+df_sites_sampled <- df_sites_sampled |> 
+  mutate(ilon = purrr::map_dbl(lon, ~get_ilon(.)))
+```
+
+Get all data for chunks.
+```{r}
+source("R/calc_cwd_et0_byilon.R")
+system("mkdir -p data/df_cwd_et0_3")
+filn <- "data/df_test_cwd_et0.rds"
+
+if (!file.exists(filn)){
+  df <- df_sites_sampled |> 
+    slice(1) |> 
+    mutate(out = purrr::map2(ilon, 
+                             lat, 
+                             ~calc_cwd_et0_byilon(.x, 
+                                                  drop_data = FALSE, 
+                                                  dirn = "data/df_cwd_et0_3/", 
+                                                  verbose = FALSE, 
+                                                  overwrite = TRUE, 
+                                                  siteinfo = NULL, 
+                                                  do_plot = TRUE, 
+                                                  use_lat = .y
+                                                  )))
+  
+  saveRDS(df, file = filn)
+} else {
+  df <- readRDS(filn)
+}
+```
+
+Visualise
+```{r}
+# myplot <- function(n, df){
+#   print(n)  
+#   df$out[[n]]$gg_fet
+# }
+# purrr::map(as.list(seq(36)), ~myplot(., df))
+
+## example for no decline
+gg1 <- df$out[[2]]$gg_fet[[1]] +
+  labs(title = NULL, y = "EF (unitless)") +
+  theme_classic()
+
+## example for S0 diagnosed (9, 34, 21)
+gg2 <- df$out[[34]]$gg_fet[[1]] +
+  labs(title = NULL, y = "EF (unitless)") +
+  theme_classic()
+
+gg3 <- df$out[[21]]$gg_fet[[1]] +
+  labs(title = NULL, y = "EF (unitless)") +
+  theme_classic()
+
+## example for flattening
+gg4 <- df$out[[31]]$gg_fet[[1]] +
+  labs(title = NULL, y = "EF (unitless)") +
+  theme_classic()
+
+cowplot::plot_grid(gg1, gg4, gg2, gg3, nrow = 2, labels = c('a', 'b', 'c', 'd'))
+ggsave("fig/plot_test_s0_diag.pdf", width = 12, height = 8)
+ggsave("fig/plot_test_s0_diag.png", width = 12, height = 8)
+```
+
+Visualise
+```{r}
+tmp <- df |> 
+  dplyr::select(-lon, -lat) |> 
+  unnest(out) |> 
+  mutate(gg = purrr::map(out, ~pull(slice(., 1), gg_fet)),
+         cwd_lue0_fet = purrr::map_dbl(out, ~pull(., cwd_lue0_fet)))
+  
+## example for no decline
+gg1 <- tmp$gg_fet[[2]] +
+  labs(title = NULL, y = "EF (unitless)") +
+  theme_classic()
+
+## example for S0 diagnosed (9, 34, 21)
+gg2 <- tmp$gg_fet[[32]] +
+  labs(title = NULL, y = "EF (unitless)") +
+  theme_classic()
+
+gg3 <- tmp$gg_fet[[21]] +
+  labs(title = NULL, y = "EF (unitless)") +
+  theme_classic()  
+  
+## example for flattening
+gg4 <- tmp$gg_fet[[29]] +
+  labs(title = NULL, y = "EF (unitless)") +
+  theme_classic()  
+
+cowplot::plot_grid(gg1, gg4, gg2, gg3, nrow = 2, labels = c('a', 'b', 'c', 'd'))
+
+## retain selected
+tmp2 <- tmp |> 
+  slice(c(2, 32, 21, 29))
+
+# ## s_def diagnostic
+# df$out[[1]]$gg_fet
+# 
+# ## water balance time series
+# df$out[[1]]$data[[1]] |> 
+#   ggplot(aes(time, bal)) + 
+#   geom_line()
+# 
+# df$out[[1]]$data[[1]] |> 
+#   ggplot(aes(deficit, fet)) + 
+#   geom_point()
+# 
+# df$out[[1]]$data[[1]] |> 
+#   ggplot(aes(NR, et)) + 
+#   geom_point() +
+#   geom_smooth(method = "lm")
+```
+
+Plot the same from the model outputs.
+```{r}
+# ## determine chunk used for the four sites in tmp2
+# df_sites_ichunk <- read_csv("data/df_sites_rsip.csv") |>
+#   mutate(idx = 1:n()) |>
+#   mutate(chunk = rep(1:as.integer(50),
+#                      each = (nrow(.)/as.integer(50)), len = nrow(.)))
+# 
+# tmp2 <- tmp2 |> 
+#   left_join(
+#     df_sites_ichunk |> 
+#       select(lon, lat, Dr, chunk)
+#   )
+
+read_myfile <- function(ichunk, use_whc){
+  path <- "./data/out_rsofun_cwdx/"
+  filename <- file.path(path, paste0("out_rsofun_cwdx_whc_", as.character(use_whc), "_ichunk_", as.character(ichunk), ".rds"))
+  if (file.exists(filename)){
+    df <- readRDS(filename)
+    return(df)
+  } else {
+    return(tibble())
+  }
+}
+
+set.seed(1982)
+df_rsofun <- purrr::map_dfr(
+      as.list(sample(seq(50), 3)),
+      ~read_myfile(., "200")
+      ) |> 
+      mutate(setup = "whc_200")
+
+# ## example of S0 detected
+# df_rsofun$out_cwd_lue0[[20]]$gg +
+#   geom_vline(xintercept = df_rsofun$whc[20])
+
+```
+
+```{r}
+purrr::map(seq(1:30), ~{print(df_rsofun$out_cwd_lue0[[.]]$gg)})
+
+```
+
+## Magnitudes of EF
+
+Read FLUXNET2015 data
+```{r}
+library(ingestr)
+ddf_fluxnet <- ingest(
+  siteinfo  = siteinfo_fluxnet2015,
+  source    = "fluxnet",
+  getvars   = list(netrad = "NETRAD", et = "LE_F_MDS"),
+  dir       = "~/data/FLUXNET-2015_Tier1/20191024/DD/",  # adjust this with your local path
+  settings  = list(
+    getswc       = FALSE,
+    filter_ntdt  = FALSE,
+    remove_neg   = FALSE,
+    threshold_LE = 0.8
+    ),
+  timescale = "d",
+  verbose = TRUE
+  )
+
+## take 95% quantile of EF by site
+tmp <- ddf_fluxnet |> 
+  mutate(data = purrr::map(data, ~mutate(., ef = remove_outliers(et/netrad)))) |> 
+  unnest(data) |> 
+  group_by(sitename) |> 
+  summarise(ef_q95 = quantile(ef, probs = 0.90, na.rm = TRUE))
+
+tmp |> 
+  ggplot(aes(ef_q95, ..count..)) +
+  geom_histogram() + 
+  theme_classic() +
+  labs(x = "Maximum evaporative fraction (unitless)", y = "Count") +
+  xlim(0, 2) +
+  geom_vline(xintercept = 1.0, linetype = "dotted")
+ggsave("fig/max_ef_fluxnet2015.pdf", width = 6, height = 4)
+ggsave("fig/max_ef_fluxnet2015.png", width = 6, height = 4)
+```
+
+
+## CWD demo
+
+```{r}
+source("R/test_cwd_tseries.R")
+# load("data/df_cwdx/df_cwdx_ilon_5000.RData")
+
+idxc <- 1
+idxa <- 500
+idxb <- 300 # 100
+
+gg1 <- test_cwd_tseries(
+  df$out_mct[[idxa]]$mct, 
+  sitename = NA, 
+  filter_years = NA, 
+  title = paste0(as.character(df$lon[idxa]), "°E, ", as.character(df$lat[idxa]), "°N")
+  )
+
+gg2 <- test_cwd_tseries(
+  df$out_mct[[idxb]]$mct, 
+  sitename = NA, 
+  filter_years = NA, 
+  title = paste0(as.character(df$lon[idxb]), "°E, ", as.character(df$lat[idxb]), "°N")
+  )
+
+gg3 <- test_cwd_tseries(
+  df$out_mct[[idxc]]$mct, 
+  sitename = NA, 
+  filter_years = NA, 
+  title = paste0(as.character(df$lon[idxc]), "°E, ", as.character(df$lat[idxc]), "°N")
+  )
+
+df_sites <- tibble(
+  sitename = c("a", "b", "c"),
+  lon = c(df$lon[idxa], df$lon[idxb], df$lon[idxc]),
+  lat = c(df$lat[idxa], df$lat[idxb], df$lat[idxc])
+)
+
+library(rbeni)
+library(ggrepel)
+
+gg0 <- plot_map_simpl() +
+  geom_text(data = df_sites, aes(lon, lat, label = sitename), color = "red")
+
+cowplot::plot_grid(gg0, gg1, gg2, gg3, labels = c("", "a", "b", "c"), nrow = 2)
+ggsave("fig/cwd_tseries.pdf", width = 12, height = 7)
+ggsave("fig/cwd_tseries.png", width = 12, height = 7)
+```
+
+## S0 versus CTI 
+
+How does S0 vary along topographic gradients? Select limited region (not too different climate) and plot S0 distribution (boxplot) along CTI bins.
+```{r}
+load("data/df_cwdx_10_20_40.RData") # loads 'df', created by analysis/04_cwd_extremes/04_collect_return_levels.R
+
+df_cwdx <- df |>
+  mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3))
+```
+
+### Add CTI data
+
+```{r}
+## combine S_cwdxXX and GTI into one big data frame
+df_cwdx <- df |> 
+  mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) |> 
+  left_join(
+    nc_to_df("~/data/gti_marthews/ga2_0_05deg_median.nc", varnam = "gti") |>
+      drop_na() |>
+      mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) |> 
+      rename(gti_q50 = gti),
+    by = c("lon", "lat")
+  ) |> 
+  left_join(
+    nc_to_df("~/data/gti_marthews/ga2_0_05deg_q10.nc", varnam = "gti") |>
+      drop_na() |>
+      mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) |> 
+      rename(gti_q10 = gti),
+    by = c("lon", "lat")
+  ) |> 
+  left_join(
+    nc_to_df("~/data/gti_marthews/ga2_0_05deg_q90.nc", varnam = "gti") |>
+      drop_na() |>
+      mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) |> 
+      rename(gti_q90 = gti),
+    by = c("lon", "lat")
+  ) |> 
+  mutate(gti_q10 = ifelse(gti_q10 < 0, NA, gti_q10),
+         gti_q50 = ifelse(gti_q50 < 0, NA, gti_q50),
+         gti_q90 = ifelse(gti_q90 < 0, NA, gti_q90))
+```
+
+### Add elevation data
+
+```{r}
+## combine S_cwdxXX and GTI into one big data frame
+df_cwdx <- df_cwdx %>% 
+  left_join(
+    nc_to_df("~/data/etopo/ETOPO1_Bed_g_mean_0_05deg.nc", varnam = "elv") %>%
+      drop_na() %>%
+      mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)),
+    by = c("lon", "lat")) %>% 
+  mutate(elv = ifelse(elv < 0, NA, elv))
+```
+
+### Apply vegetation mask
+
+```{r}
+load("data/df_vegmask.RData")  # loads df_vegmask
+
+df_cwdx <- df_cwdx |>
+  left_join(df_vegmask,
+            by = c("lon", "lat")) |>
+  mutate(cwdx80 = ifelse(nonveg > 99, NA, cwdx80)) |> 
+  mutate(cwdx80 = ifelse(water > 99, NA, cwdx80)) |> 
+  mutate(cwdx80 = ifelse(snowandice > 99, NA, cwdx80)) 
+```
+    
+S0 in CTI and elevation bins
+```{r}
+gti_breaks <- 0:15
+elv_breaks <- seq(0, 9, by = 0.5)
+
+df_cwdx <- df_cwdx %>%
+  mutate(elv = elv/1000) %>% 
+  ungroup() %>%
+  mutate(igti_q10 = cut(gti_q10,
+                    breaks = gti_breaks),
+         igti_q50 = cut(gti_q50,
+                    breaks = gti_breaks),
+         igti_q90 = cut(gti_q90,
+                    breaks = gti_breaks)) %>%
+  mutate(ielv = cut(elv,
+                    breaks = elv_breaks))
+```  
+
+### Central asia
+    
+```{r}
+df_box1 <- tibble(
+  long = c(50, 65, 65, 50, 50), lat = c(26, 26, 35, 35, 26),
+  order = 1:5, group = rep(1, 5)
+  )
+
+df_box2 <- tibble(
+  long = c(76, 84, 84, 76, 76), lat = c(26, 26, 31, 31, 26),
+  order = 1:5, group = rep(1, 5)
+  )
+
+## central asia
+gg_cwdx <- df_cwdx |> 
+  drop_na(cwdx80) |> 
+  plot_map4(varnam = "cwdx80", lonmin = 45, lonmax = 95, latmin = 25, latmax = 42.5, 
+            breaks = c(seq(0, 100, by = 20), 150, 200, 300, 500, 700, 900, 1200, Inf), 
+            spacing = "constant",
+            combine = FALSE, 
+            colorscale = "batlowK", 
+            legend_title = "(mm)",
+            expand_size_y = 0.5,
+            hillshade = TRUE, rivers = TRUE, lakes = TRUE,
+            scale = 50
+            )
+
+## add red box for zoom
+gg_cwdx$ggmap <- gg_cwdx$ggmap + 
+  labs(title = expression(paste(italic("S")[CWDX80]))) +
+  geom_path(aes(x = long, y = lat, group = group), data = df_box1, size = 0.5, color = "red") +
+  geom_path(aes(x = long, y = lat, group = group), data = df_box2, size = 0.5, color = "royalblue")
+
+cowplot::plot_grid(gg_cwdx$ggmap, gg_cwdx$gglegend, ncol = 2, rel_widths = c(1, 0.2))
+```
+
+Map CTI
+```{r}
+## central asia
+gg_cti <- df_cwdx |> 
+  drop_na(gti_q90) |> 
+  plot_map4(varnam = "gti_q90", lonmin = 45, lonmax = 95, latmin = 25, latmax = 42.5, 
+            breaks = 0:15, 
+            spacing = "constant",
+            combine = FALSE, 
+            colorscale = "batlowK", legend_title = "(unitless)",
+            expand_size_y = 0.5,
+            hillshade = TRUE, rivers = TRUE, lakes = TRUE,
+            scale = 50
+            )
+gg_cti$ggmap <- gg_cti$ggmap + 
+  labs(title = "CTI, 90% quantile") + 
+  geom_path(aes(x = long, y = lat, group = group), data = df_box1, size = 0.5, color = "red") +
+  geom_path(aes(x = long, y = lat, group = group), data = df_box2, size = 0.5, color = "royalblue")
+```
+
+Map Elevation
+```{r}
+## central asia
+gg_elv <- df_cwdx %>% 
+  plot_map4(varnam = "elv", lonmin = 45, lonmax = 95, latmin = 25, latmax = 42.5, 
+            breaks = seq(0, 8.500, by = 0.500), 
+            spacing = "constant",
+            combine = FALSE, 
+            colorscale = "batlow", invert = 1, legend_title = "(km)",
+            expand_size_y = 0.5,
+            hillshade = TRUE, rivers = TRUE, lakes = TRUE,
+            scale = "medium"
+            )
+gg_elv$ggmap <- gg_elv$ggmap + 
+  labs(title = "Elevation") + 
+  geom_path(aes(x = long, y = lat, group = group), data = df_box1, size = 0.5, color = "red") +
+  geom_path(aes(x = long, y = lat, group = group), data = df_box2, size = 0.5, color = "royalblue")
+
+gg_elv$ggmap
+```
+
+Red box: `long = c(50, 65, 65, 50, 50), lat = c(26, 26, 35, 35, 26)`
+```{r}
+n_fun <- function(x){
+  return(data.frame(y = 750,
+                    label = length(x)))
+}
+
+gg_boxplot1_cwdx_casia <- df_cwdx |> 
+  filter(lon > 50 & lon < 65 & lat > 26 & lat < 35 & !is.na(igti_q90)) |>
+  ggplot(aes(igti_q90, cwdx80)) +
+  geom_boxplot(outlier.shape = NA, fill = "grey70") +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, size = 2.5) +
+  ylim(0, 750) +
+  theme_classic() +
+  labs(y = expression(paste(italic("S")[CWDX80])), x = "CTI bin", title = "CTI", subtitle = "Red box")
+
+gg_boxplot1_cwdx_casia
+
+n_fun <- function(x){
+  return(data.frame(y = 600,
+                    label = length(x)))
+}
+gg_boxplot1_elv_casia <- df_cwdx %>% 
+  filter(lon > 50 & lon < 65 & lat > 26 & lat < 35 & !is.na(ielv)) %>%
+  ggplot(aes(ielv, cwdx80)) +
+  geom_boxplot(outlier.shape = NA, fill = "grey70") +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, size = 2.5) +
+  ylim(0, 600) +
+  theme_classic() +
+  labs(y = expression(paste(italic("S")[CWDX80])), x = "Elevation bin (km)", title = "Elevation", subtitle = "Red box")
+
+gg_boxplot1_elv_casia
+```
+
+Blue box: `long = c(76, 84, 84, 76, 76), lat = c(26, 26, 31, 31, 26)`
+```{r}
+n_fun <- function(x){
+  return(data.frame(y = 750,
+                    label = length(x)))
+}
+gg_boxplot2_cwdx_casia <- df_cwdx %>% 
+  filter(lon > 76 & lon < 84 & lat > 26 & lat < 31 & !is.na(igti_q90)) %>%
+  ggplot(aes(igti_q90, cwdx80)) +
+  geom_boxplot(outlier.shape = NA, fill = "grey70") +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, size = 2.5) +
+  ylim(0, 750) +
+  theme_classic() +
+  labs(y = expression(paste(italic("S")[CWDX80])), x = "CTI bin", title = "CTI", subtitle = "Blue box")
+
+gg_boxplot2_cwdx_casia
+
+n_fun <- function(x){
+  return(data.frame(y = 600,
+                    label = length(x)))
+}
+gg_boxplot2_elv_casia <- df_cwdx %>% 
+  filter(lon > 76 & lon < 84 & lat > 26 & lat < 31 & !is.na(ielv)) %>%
+  ggplot(aes(ielv, cwdx80)) +
+  geom_boxplot(outlier.shape = NA, fill = "grey70") +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, size = 2.5) +
+  ylim(0, 600) +
+  theme_classic() +
+  labs(y = expression(paste(italic("S")[CWDX80])), x = "Elevation bin (km)", title = "Elevation", subtitle = "Blue box")
+
+gg_boxplot2_elv_casia
+```
+
+Publication figure
+```{r}
+top <- cowplot::plot_grid(gg_cwdx$ggmap, gg_cwdx$gglegend, 
+                          gg_cti$ggmap, gg_cti$gglegend,
+                          gg_elv$ggmap, gg_elv$gglegend,
+                          ncol = 2, rel_widths = c(1, 0.12), labels = c('a', '', 'b', '', 'c', ''))
+btm <- cowplot::plot_grid(gg_boxplot1_cwdx_casia, gg_boxplot2_cwdx_casia,
+                          gg_boxplot1_elv_casia, gg_boxplot2_elv_casia,
+                          ncol = 2, labels = c('d', 'e', 'f', 'g'))
+cowplot::plot_grid(top, btm, ncol = 1, rel_heights = c(2.5, 0.85))
+ggsave("fig/fig_topography_casia.pdf", width = 10, height = 16)
+ggsave("fig/fig_topography_casia.png", width = 10, height = 16)
+```
+
+### Western USA
+    
+```{r}
+df_box1 <- tibble(
+  long = c(-113, -119, -119, -113, -113), lat = c(38, 38, 42, 42, 38),
+  order = 1:5, group = rep(1, 5)
+  )
+
+df_box2 <- tibble(
+  long = c(-118, -120.5, -120.5, -118, -118), lat = c(35, 35, 37, 37, 35),
+  order = 1:5, group = rep(1, 5)
+  )
+
+## W USA
+gg_cwdx <- df_cwdx |> 
+  drop_na(cwdx80) |> 
+  plot_map4(varnam = "cwdx80", 
+            lonmin = -125, lonmax = -95, latmin = 32.5, latmax = 44,
+            breaks = c(seq(0, 100, by = 20), 150, 200, 300, 500, 700, 900, 1200, Inf), 
+            spacing = "constant",
+            combine = FALSE, 
+            colorscale = "batlowK", legend_title = "(mm)",
+            expand_size_y = 0.5,
+            hillshade = TRUE, rivers = TRUE, lakes = TRUE,
+            scale = 50
+            )
+
+## add red box for zoom
+gg_cwdx$ggmap <- gg_cwdx$ggmap + 
+  labs(title = expression(paste(italic("S")[CWDX80]))) +
+  geom_path(aes(x = long, y = lat, group = group), data = df_box1, size = 0.5, color = "red") +
+  geom_path(aes(x = long, y = lat, group = group), data = df_box2, size = 0.5, color = "royalblue")
+
+# cowplot::plot_grid(gg_cwdx$ggmap, gg_cwdx$gglegend, ncol = 2, rel_widths = c(1, 0.2))
+```
+
+Plot CTI
+```{r}
+## central asia
+gg_cti <- df_cwdx |> 
+  drop_na(gti_q90) |> 
+  plot_map4(varnam = "gti_q90", 
+            lonmin = -125, lonmax = -95, latmin = 32.5, latmax = 44,
+            breaks = 0:15, 
+            spacing = "constant",
+            combine = FALSE, 
+            colorscale = "batlowK", legend_title = "(unitless)",
+            expand_size_y = 0.5,
+            hillshade = TRUE, rivers = TRUE, lakes = TRUE,
+            scale = 50
+            )
+gg_cti$ggmap <- gg_cti$ggmap + 
+  labs(title = "CTI, 90% quantile") + 
+  geom_path(aes(x = long, y = lat, group = group), data = df_box1, size = 0.5, color = "red") +
+  geom_path(aes(x = long, y = lat, group = group), data = df_box2, size = 0.5, color = "royalblue")
+```
+
+Map Elevation
+```{r}
+## central asia
+gg_elv <- df_cwdx %>% 
+  plot_map4(varnam = "elv", 
+            lonmin = -125, lonmax = -95, latmin = 32.5, latmax = 44,
+            breaks = seq(0, 4.000, by = 0.200), 
+            spacing = "constant",
+            combine = FALSE, 
+            colorscale = "batlow", invert = 1, legend_title = "(km)",
+            expand_size_y = 0.5,
+            hillshade = TRUE, rivers = TRUE, lakes = TRUE,
+            scale = "medium"
+            )
+gg_elv$ggmap <- gg_elv$ggmap + 
+  labs(title = "Elevation") + 
+  geom_path(aes(x = long, y = lat, group = group), data = df_box1, size = 0.5, color = "red") +
+  geom_path(aes(x = long, y = lat, group = group), data = df_box2, size = 0.5, color = "royalblue")
+
+gg_elv$ggmap
+```
+
+Red box 
+```{r}
+n_fun <- function(x){
+  return(data.frame(y = 700,
+                    label = length(x)))
+}
+
+gg_boxplot1_cwdx_wusa <- df_cwdx %>% 
+  filter(lon > -119 & lon < -113 & lat > 38 & lat < 42 & !is.na(igti_q90)) %>%
+  ggplot(aes(igti_q90, cwdx80)) +
+  geom_boxplot(outlier.shape = NA, fill = "grey70") +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, size = 2.5) +
+  ylim(0, 700) +
+  theme_classic() +
+  labs(y = expression(paste(italic("S")[CWDX80])), x = "CTI bin", title = "CTI", subtitle = "Red box")
+
+gg_boxplot1_cwdx_wusa
+
+n_fun <- function(x){
+  return(data.frame(y = 600,
+                    label = length(x)))
+}
+
+gg_boxplot1_elv_wusa <- df_cwdx %>% 
+  filter(lon > -119 & lon < -113 & lat > 38 & lat < 42 & !is.na(ielv)) %>%
+  ggplot(aes(ielv, cwdx80)) +
+  geom_boxplot(outlier.shape = NA, fill = "grey70") +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, size = 2.5) +
+  ylim(0, 620) +
+  theme_classic() +
+  labs(y = expression(paste(italic("S")[CWDX80])), x = "Elevation bin (km)", title = "Elevation", subtitle = "Red box")
+
+gg_boxplot1_elv_wusa
+```
+
+Blue box `long = c(-118, -120.5, -120.5, -118, -118), lat = c(35, 35, 37, 37, 35),`
+```{r}
+n_fun <- function(x){
+  return(data.frame(y = 700,
+                    label = length(x)))
+}
+gg_boxplot2_cwdx_wusa <- df_cwdx %>% 
+  filter(lon > -120.5 & lon < -118 & lat > 35 & lat < 37 & !is.na(igti_q90)) %>%
+  ggplot(aes(igti_q90, cwdx80)) +
+  geom_boxplot(outlier.shape = NA, fill = "grey70") +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, size = 2.5) +
+  ylim(0, 700) +
+  theme_classic() +
+  labs(y = expression(paste(italic("S")[CWDX80])), x = "CTI bin", title = "CTI", subtitle = "Blue box")
+
+gg_boxplot2_cwdx_wusa
+
+n_fun <- function(x){
+  return(data.frame(y = 600,
+                    label = length(x)))
+}
+gg_boxplot2_elv_wusa <- df_cwdx %>% 
+  filter(lon > -120.5 & lon < -118 & lat > 35 & lat < 37 & !is.na(ielv)) %>%
+  ggplot(aes(ielv, cwdx80)) +
+  geom_boxplot(outlier.shape = NA, fill = "grey70") +
+  stat_summary(fun.data = n_fun, geom = "text", hjust = 0.5, size = 2.5) +
+  ylim(0, 620) +
+  theme_classic() +
+  labs(y = expression(paste(italic("S")[CWDX80])), x = "Elevation bin (km)", title = "Elevation", subtitle = "Blue box")
+
+gg_boxplot2_elv_wusa
+```
+
+
+Publication figure
+```{r}
+top <- cowplot::plot_grid(gg_cwdx$ggmap, gg_cwdx$gglegend, 
+                          gg_cti$ggmap, gg_cti$gglegend,
+                          gg_elv$ggmap, gg_elv$gglegend,
+                          ncol = 2, rel_widths = c(1, 0.12), labels = c('a', '', 'b', '', 'c', ''))
+btm <- cowplot::plot_grid(gg_boxplot1_cwdx_wusa, gg_boxplot2_cwdx_wusa,
+                          gg_boxplot1_elv_wusa, gg_boxplot2_elv_wusa,
+                          ncol = 2, labels = c('d', 'e', 'f', 'g'))
+cowplot::plot_grid(top, btm, ncol = 1, rel_heights = c(2.5, 0.85))
+ggsave("fig/fig_topography_wusa.png", width = 10, height = 16)
+ggsave("fig/fig_topography_wusa.pdf", width = 10, height = 16)
+```
+
+
+<!-- Publication figure -->
+<!-- ```{r} -->
+<!-- cowplot::plot_grid(gg_cwdx$ggmap, gg_cwdx$gglegend, gg_cti$ggmap, gg_cti$gglegend, gg_boxplot, -->
+<!--                    ncol = 2, rel_widths = c(1, 0.12), rel_heights = c(1, 1, 0.4), labels = c('a', '', 'b', '', 'c', '')) -->
+<!-- ggsave("fig/fig_topography_wusa.png", width = 10, height = 12) -->
+<!-- ``` -->

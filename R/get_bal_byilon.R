@@ -2,9 +2,9 @@ get_bal_byilon <- function(ilon_hires){
   
   source("R/get_bal.R")
   
-  dirn <- "~/mct/data/df_bal/"
+  dirn <- "data/df_bal/"
   filn <- paste0("df_bal_ilon_", ilon_hires, ".RData")
-  if (!dir.exists(dirn)) system("mkdir -p ~/mct/data/df_bal")
+  if (!dir.exists(dirn)) system("mkdir -p data/df_bal")
   path_out <- paste0(dirn, filn)
 
   if (!file.exists(path_out)){
@@ -15,12 +15,12 @@ get_bal_byilon <- function(ilon_hires){
     ilon_lores <- which.min(abs(lon_lores - lon_hires[ilon_hires]))
     
     ## Open ET-mm file
-    dirn <- "~/mct/data/df_alexi_et_mm/"
+    dirn <- "data/df_alexi_et_mm/"
     filn <- paste0("df_alexi_et_mm_ilon_", ilon_hires, ".RData")
     path_et_mm <- paste0(dirn, filn)
     
     ## open snow file of corresponding longitude slice
-    dirn <- "~/mct/data/df_snow/"
+    dirn <- "data/df_snow/"
     filn <- paste0("df_snow_ilon_", ilon_lores, ".RData")
     path_snow <- paste0(dirn, filn)
     

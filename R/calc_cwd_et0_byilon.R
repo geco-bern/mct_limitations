@@ -1,4 +1,4 @@
-calc_cwd_et0_byilon <- function(ilon, drop_data = TRUE, dirn = "~/mct/data/df_cwd_et0_2/", verbose = FALSE, overwrite = FALSE, siteinfo = NULL, use_lat = NULL, do_plot = TRUE){
+calc_cwd_et0_byilon <- function(ilon, drop_data = TRUE, dirn = "data/df_cwd_et0_2/", verbose = FALSE, overwrite = FALSE, siteinfo = NULL, use_lat = NULL, do_plot = TRUE){
   
   source("R/calc_cwd_lue0_v2.R")
 
@@ -24,7 +24,7 @@ calc_cwd_et0_byilon <- function(ilon, drop_data = TRUE, dirn = "~/mct/data/df_cw
   if (!file.exists(path) || overwrite){
     
     ## Open file CWDX output
-    dirn <- "~/mct/data/df_cwdx/"
+    dirn <- "data/df_cwdx/"
     filn <- paste0("df_cwdx_ilon_", ilon, ".RData")
     load(paste0(dirn, filn)) # loads 'df'
     
@@ -45,7 +45,7 @@ calc_cwd_et0_byilon <- function(ilon, drop_data = TRUE, dirn = "~/mct/data/df_cw
       rename(data_netrad = data) %>% 
       mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) 
     rm("df")
-    
+      
     ## Load ALEXI ET data (in MJ d-1 m-2)
     filn <- paste0("EDAY_CERES__ilon_", ilon, ".RData")
     dirn <- "~/data/alexi_tir/data_tidy/"

@@ -4,9 +4,9 @@ get_cwdx_byilon <- function(ilon_hires, df_lat = NULL){
   source("R/get_plantwhc_mct_bysite.R")
   
   ## construct output file name
-  dirn <- "~/mct/data/df_cwdx/"
+  dirn <- "data/df_cwdx/"
   filn <- paste0("df_cwdx_ilon_", ilon_hires, ".RData")
-  if (!dir.exists(dirn)) system("mkdir -p ~/mct/data/df_cwdx")
+  if (!dir.exists(dirn)) system("mkdir -p data/df_cwdx")
   path <- paste0(dirn, filn)
   
   if (!is.null(df_lat)){
@@ -17,7 +17,7 @@ get_cwdx_byilon <- function(ilon_hires, df_lat = NULL){
     if (!file.exists(path)) rlang::abort(paste("Aborting. File does not exist:", path))
 
     ## Open file with daily water balance
-    dirn <- "~/mct/data/df_bal/"
+    dirn <- "data/df_bal/"
     filn <- paste0("df_bal_ilon_", ilon_hires, ".RData")
     if (!file.exists(paste0(dirn, filn))) rlang::abort(paste("Aborting. File does not exist:", paste0(dirn, filn)))
     load(paste0(dirn, filn)) # loads 'df'
@@ -77,7 +77,7 @@ get_cwdx_byilon <- function(ilon_hires, df_lat = NULL){
     if (!file.exists(path)){
       
       ## Open file with daily water balance
-      dirn <- "~/mct/data/df_bal/"
+      dirn <- "data/df_bal/"
       filn <- paste0("df_bal_ilon_", ilon_hires, ".RData")
       load(paste0(dirn, filn)) # loads 'df'
       

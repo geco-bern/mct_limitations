@@ -1,0 +1,16 @@
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+.DS_Store
+
+# Generated analysis products. Keep the directory documentation tracked.
+data/*
+!data/README
+!data/README.md
+fig/*
+logs/*
+
+# Rendered reports and exploratory output.
+vignettes/*.html
+/whc_forcing_map.html

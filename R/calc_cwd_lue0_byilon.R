@@ -1,4 +1,4 @@
-calc_cwd_lue0_byilon <- function(ilon, drop_data = TRUE, dirn = "~/mct/data/df_cwd_lue0_2", verbose = FALSE){
+calc_cwd_lue0_byilon <- function(ilon, drop_data = TRUE, dirn = "data/df_cwd_lue0_2", verbose = FALSE){
   
   source("R/calc_cwd_lue0_v2.R")
   
@@ -33,7 +33,7 @@ calc_cwd_lue0_byilon <- function(ilon, drop_data = TRUE, dirn = "~/mct/data/df_c
     vec_lat_lores <- df_sw$lat %>% unique()
     
     ## Open file CWDX output
-    dirn <- "~/mct/data/df_cwdx/"
+    dirn <- "data/df_cwdx/"
     filn <- paste0("df_cwdx_ilon_", ilon, ".RData")
     load(paste0(dirn, filn)) # loads 'df'
     

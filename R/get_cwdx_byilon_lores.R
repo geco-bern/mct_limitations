@@ -4,15 +4,15 @@ get_cwdx_byilon_lores <- function(ilon){
   source("R/get_plantwhc_mct_bysite.R")
   
   ## construct output file name
-  dirn <- "~/mct/data/df_cwdx_lores/"
+  dirn <- "data/df_cwdx_lores/"
   filn <- paste0("df_cwdx_ilon_", ilon, ".RData")
-  if (!dir.exists(dirn)) system("mkdir -p ~/mct/data/df_cwdx_lores")
+  if (!dir.exists(dirn)) system("mkdir -p data/df_cwdx_lores")
   path <- paste0(dirn, filn)
   
   if (!file.exists(path)){
     
     ## Open file with daily water balance
-    dirn <- "~/mct/data/df_bal_lores/"
+    dirn <- "data/df_bal_lores/"
     filn <- paste0("df_bal_ilon_", ilon, ".RData")
     load(paste0(dirn, filn)) # loads 'df'
     

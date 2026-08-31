@@ -1,0 +1,57 @@
+Type: Project
+Package: mct
+Title: Global Root-Zone Water Storage Analysis
+Version: 1.0.0
+Authors@R: person("Benjamin", "Stocker", role = "aut")
+Description: Reproducible analysis workflow for global patterns of water
+    storage in vegetation rooting zones using the Mass Curve Technique.
+License: GPL-3
+Encoding: UTF-8
+Depends:
+    R (>= 4.1)
+Imports:
+    broom,
+    caret,
+    cowplot,
+    dplyr,
+    extRemes,
+    forcats,
+    ggplot2,
+    ggrepel,
+    ggridges,
+    here,
+    ingestr,
+    lubridate,
+    magrittr,
+    map2tidy,
+    ncdf4,
+    parallelly,
+    patchwork,
+    pdp,
+    purrr,
+    ranger,
+    raster,
+    rasterVis,
+    readr,
+    recipes,
+    rlang,
+    rbeni,
+    rsofun,
+    segmented,
+    sf,
+    stringr,
+    terra,
+    tibble,
+    tidyr,
+    tidyverse,
+    vip
+Suggests:
+    knitr,
+    renv,
+    testthat (>= 3.0.0)
+Remotes:
+    geco-bern/map2tidy,
+    geco-bern/rbeni,
+    geco-bern/ingestr,
+    geco-bern/rsofun
+Config/testthat/edition: 3
