@@ -12,12 +12,12 @@ args <- chunk_arguments()
 path <- paste0(
   "data/df_whc_hires_chunks/df_whc_hires_ilon_",
   args$chunk,
-  ".RData"
+  ".rds"
 )
 
 if (!file.exists(path)) {
-  require_files("data/df_hwsd_hires.RData", "soil-parameter calculation")
-  load("data/df_hwsd_hires.RData")
+  require_files("data/df_hwsd_hires.rds", "soil-parameter calculation")
+  df_hwsd <- readRDS("data/df_hwsd_hires.rds")
 
   df_hwsd <- df_hwsd %>%
     mutate(
@@ -42,7 +42,7 @@ if (!file.exists(path)) {
   }
 
   df_whc <- run_parallel(df_cells, calculate_cell) %>% bind_rows()
-  write_rdata_atomic(df_whc, "df_whc", path.expand(path))
+  write_rds_atomic(df_whc, path.expand(path))
   message("Wrote ", path)
 } else {
   message("File exists already: ", path)

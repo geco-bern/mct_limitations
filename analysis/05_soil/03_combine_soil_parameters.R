@@ -19,6 +19,6 @@ if (!length(filelist)) {
 }
 
 df_whc <- run_parallel(filelist, extract_whc_byfil) %>% bind_rows()
-path <- "~/data/mct_data/df_whc_hires_lasthope.RData"
-write_rdata_atomic(df_whc, "df_whc", path.expand(path))
+path <- "~/data/mct_data/df_whc_hires_lasthope.rds"
+write_rds_atomic(df_whc, path.expand(path))
 message("Wrote ", path)

@@ -20,18 +20,15 @@ test_that("parallel task failures make the checkpoint fail", {
   )
 })
 
-test_that("atomic RData writes preserve the requested object name", {
-  output <- tempfile(fileext = ".RData")
+test_that("atomic RDS writes preserve a single object", {
+  output <- tempfile(fileext = ".rds")
   on.exit(unlink(output), add = TRUE)
 
-  write_rdata_atomic(data.frame(x = 1), "df", output)
-  loaded <- new.env(parent = emptyenv())
-  expect_equal(load(output, envir = loaded), "df")
-  expect_equal(loaded$df$x, 1)
+  write_rds_atomic(data.frame(x = 1), output)
+  expect_equal(readRDS(output)$x, 1)
 
-  write_rdata_atomic(data.frame(x = 2), "df", output)
-  load(output, envir = loaded)
-  expect_equal(loaded$df$x, 2)
+  write_rds_atomic(data.frame(x = 2), output)
+  expect_equal(readRDS(output)$x, 2)
 })
 
 test_that("map2tidy time output is normalised to the legacy contract", {

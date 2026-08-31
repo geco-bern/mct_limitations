@@ -107,7 +107,7 @@ require_files <- function(paths, step = NULL) {
   invisible(paths)
 }
 
-write_rdata_atomic <- function(object, object_name, path) {
+write_rds_atomic <- function(object, path, compress = TRUE) {
   ensure_directory(dirname(path))
   temporary <- tempfile(
     pattern = paste0(".", basename(path), "-"),
@@ -115,9 +115,7 @@ write_rdata_atomic <- function(object, object_name, path) {
   )
   on.exit(unlink(temporary), add = TRUE)
 
-  environment <- new.env(parent = emptyenv())
-  assign(object_name, object, envir = environment)
-  save(list = object_name, file = temporary, envir = environment)
+  saveRDS(object, file = temporary, compress = compress)
 
   if (file.exists(path) && unlink(path) != 0L) {
     stop("Could not replace existing output: ", path, call. = FALSE)

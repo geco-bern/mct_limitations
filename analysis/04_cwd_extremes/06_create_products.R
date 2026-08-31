@@ -5,7 +5,7 @@
 source("analysis/_common.R")
 
 ## CWDX data
-load("data/df_cwdx_10_20_40.RData") # loads 'df', created by analysis/04_cwd_extremes/04_collect_return_levels.R
+df <- readRDS("data/df_cwdx_10_20_40.rds")
 
 df_cwdx <- df |> 
   mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) 
@@ -13,7 +13,7 @@ df_cwdx <- df |>
 rm("df")
 
 ## mask out non-land cells based on zroot (get info from soil data)
-load("data/df_mask.RData")
+df_mask <- readRDS("data/df_mask.rds")
 df_cwdx <- df_cwdx |> 
   left_join(df_mask, by = c("lon", "lat"))
 for (i in 3:8){
@@ -71,7 +71,7 @@ system("cdo remapbil,data-raw/grid/gridfile_tenthdeg.txt data/cwdx200.nc data/cw
 source("R/extract_cwdx_byilon_lores.R")
 out <- purrr::map_dfr(as.list(seq(720)), ~extract_cwdx_byilon_lores(.))
 
-load("data/df_vegmask_tenthdeg.RData")  # loads df_vegmask_tenthdeg
+df_vegmask_tenthdeg <- readRDS("data/df_vegmask_tenthdeg.rds")
 
 ## 80 yr
 nc_tenthdeg <- nc_to_df("data/cwdx80_tenthdeg.nc", varnam = "cwdx80") |> 
@@ -120,15 +120,15 @@ gg_fig3a_legend <- gg$gglegend
 #                        rivers@data,
 #                        by = "id"
 #                        )
-# save(df_rivers, file = "data/df_rivers.RData")
+# saveRDS(df_rivers, file = "data/df_rivers.rds")
 
-load("data/df_cwdx_10_20_40.RData") # loads 'df', created by analysis/04_cwd_extremes/04_collect_return_levels.R
+df <- readRDS("data/df_cwdx_10_20_40.rds")
 
 df_cwdx <- df |> 
   mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) 
 
 ## apply vegetation mask
-load("data/df_vegmask.RData") # loads df_vegmask
+df_vegmask <- readRDS("data/df_vegmask.rds")
 df_cwdx <- df_cwdx |>
   left_join(df_vegmask |> dplyr::select(lon, lat, vegmask),
             by = c("lon", "lat")) |>
@@ -219,8 +219,8 @@ cowplot::plot_grid(gg$ggmap, gg$gglegend, ncol = 2, rel_widths = c(1, 0.1))
 ggsave("fig/map_cwdx80_amazon.pdf", width = 9, height = 6)
 ggsave("fig/map_cwdx80_amazon.png", width = 9, height = 6)
 
-load("data/df_cwdx_10_20_40.RData") # loads 'df', created by analysis/04_cwd_extremes/04_collect_return_levels.R
-load("data/df_vegmask.RData") # loads df_vegmask
+df <- readRDS("data/df_cwdx_10_20_40.rds")
+df_vegmask <- readRDS("data/df_vegmask.rds")
 df_cwdx <- df |> 
   mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) |> 
   left_join(df_vegmask |> dplyr::select(lon, lat, vegmask),
@@ -236,7 +236,7 @@ gg_hist_cwdx80 <- df_cwdx |>
   theme_classic() +
   labs(x = expression(italic(S)[CWDX80] ~ "(mm)"), y = "Count")
 
-load("data/df_whc.RData")
+df_whc <- readRDS("data/df_whc.rds")
 
 library(patchwork)
 
@@ -355,11 +355,11 @@ plot_grid(gg1, gg2, ncol = 1, labels = c('a', 'b'))
 ggsave("fig/map_whc_1m_2m.pdf", width = 10, height = 9)
 ggsave("fig/map_whc_1m_2m.png", width = 10, height = 9)
 
-load("data/df_cwdx_10_20_40.RData") # loads 'df', created by analysis/04_cwd_extremes/04_collect_return_levels.R
+df <- readRDS("data/df_cwdx_10_20_40.rds")
 df_cwdx <- df |> 
   mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) 
 rm("df")
-load("data/df_vegmask.RData") # loads df_vegmask
+df_vegmask <- readRDS("data/df_vegmask.rds")
 
 df <- df_whc |> 
   dplyr::select(lon, lat, whc_1m, whc_2m) |> 

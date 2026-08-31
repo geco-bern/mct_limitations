@@ -3,7 +3,7 @@ get_bal_byilon_lores <- function(ilon){
   source("R/get_bal.R")
   
   dirn <- "data/df_bal_lores/"
-  filn <- paste0("df_bal_ilon_", ilon, ".RData")
+  filn <- paste0("df_bal_ilon_", ilon, ".rds")
   if (!dir.exists(dirn)) system("mkdir -p data/df_bal_lores")
   path_out <- paste0(dirn, filn)
 
@@ -13,20 +13,18 @@ get_bal_byilon_lores <- function(ilon){
     
     ## Open PET-mm file
     dirn <- "~/data/sofun_outputs/global_FULL_MODIS-C006_MOD15A2_v3.4/data_tidy/"
-    filn <- paste0("global_FULL_MODIS-C006_MOD15A2_v3.4.d.pet_ilon_", ilon, ".RData")
+    filn <- paste0("global_FULL_MODIS-C006_MOD15A2_v3.4.d.pet_ilon_", ilon, ".rds")
     path_pet <- paste0(dirn, filn)
       
     ## open snow file of corresponding longitude slice
     dirn <- "data/df_snow/"
-    filn <- paste0("df_snow_ilon_", ilon_lores, ".RData")
+    filn <- paste0("df_snow_ilon_", ilon_lores, ".rds")
     path_snow <- paste0(dirn, filn)
     
     if (file.exists(path_pet) && file.exists(path_snow)){
      
-      load(path_pet) # loads 'df'
-      df_pet <- df
-      load(path_snow)  # loads 'df'
-      df_snow <- df
+      df_pet <- readRDS(path_pet)
+      df_snow <- readRDS(path_snow)
       
       ## get closest matching latitude indices and merge data frames
       df <- df_pet %>% 
@@ -62,7 +60,7 @@ get_bal_byilon_lores <- function(ilon){
         ) 
       
       rlang::inform(paste("Writing file:", path_out))    
-      save(df, file = path_out)
+      saveRDS(df, file = path_out)
       
     } else {
       

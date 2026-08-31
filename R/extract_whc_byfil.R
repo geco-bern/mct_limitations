@@ -10,7 +10,7 @@ extract_whc_byfil <- function(ifil, batch_size = 10000L){
       tidyr::unnest(data_soiltext_sub) %>% 
       dplyr::select(lon, lat, fc_top, pwp_top, whc_top, fc_sub = fc, pwp_sub = pwp, whc_sub = whc)
   }
-  load(ifil) # should load 'df_whc'
+  df_whc <- readRDS(ifil)
   df_whc <- df_whc %>% 
     ungroup()
   batches <- split(

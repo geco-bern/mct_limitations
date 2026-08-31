@@ -17,7 +17,7 @@ calc_cwd_et0_byilon <- function(ilon, drop_data = TRUE, dirn = "data/df_cwd_et0_
   convert_et_MJ <- function(x){ x * 1e6 / (24 * 60 * 60) }  # MJ m-2 d-1 -> W m-2
   
   ## construct output file name
-  filn <- paste0("df_cwd_et0_", ilon, ".RData")
+  filn <- paste0("df_cwd_et0_", ilon, ".rds")
   if (!dir.exists(dirn)) system(paste0("mkdir -p ", dirn))
   path <- paste0(dirn, "/", filn)
   
@@ -25,8 +25,8 @@ calc_cwd_et0_byilon <- function(ilon, drop_data = TRUE, dirn = "data/df_cwd_et0_
     
     ## Open file CWDX output
     dirn <- "data/df_cwdx/"
-    filn <- paste0("df_cwdx_ilon_", ilon, ".RData")
-    load(paste0(dirn, filn)) # loads 'df'
+    filn <- paste0("df_cwdx_ilon_", ilon, ".rds")
+    df <- readRDS(paste0(dirn, filn))
     
     ## extract data from CWDX output. This now contains the CWD and instances information
     df_cwd <- df %>%
@@ -38,18 +38,18 @@ calc_cwd_et0_byilon <- function(ilon, drop_data = TRUE, dirn = "data/df_cwd_et0_
       dplyr::select(-mct)
     
     ## Load net radiation data (daytime net radiation in W m-2)
-    filn <- paste0("GLASS07B01.V41._ilon_", ilon, ".RData")
+    filn <- paste0("GLASS07B01.V41._ilon_", ilon, ".rds")
     dirn <- "~/data/glass/data_tidy/"
-    load(paste0(dirn, filn)) # loads 'df'
+    df <- readRDS(paste0(dirn, filn))
     df_netrad <- df %>% 
       rename(data_netrad = data) %>% 
       mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) 
     rm("df")
       
     ## Load ALEXI ET data (in MJ d-1 m-2)
-    filn <- paste0("EDAY_CERES__ilon_", ilon, ".RData")
+    filn <- paste0("EDAY_CERES__ilon_", ilon, ".rds")
     dirn <- "~/data/alexi_tir/data_tidy/"
-    load(paste0(dirn, filn)) # loads 'df'
+    df <- readRDS(paste0(dirn, filn))
     
     ## this is for checks at certain sites
     if (!is.null(siteinfo)){
@@ -123,7 +123,7 @@ calc_cwd_et0_byilon <- function(ilon, drop_data = TRUE, dirn = "data/df_cwd_et0_
     
     ## write to file
     print(paste("Writing file:", path))
-    save(df, file = path)  
+    saveRDS(df, file = path)
     
   } else {
     print(paste("File exists already:", path))

@@ -27,16 +27,16 @@ source("R/get_plantwhc_mct_bysite.R")
 source("R/get_plantwhc_mct_global.R")
 ```
 
-Invoke all at once. This takes several days. Chunks of data are written to `./data/df_plantwhc_mct<i>.Rdata`, where `i` runs from 1 to 1000.
+Invoke all at once. This takes several days. Chunks of data are written to `./data/df_plantwhc_mct<i>.rds`, where `i` runs from 1 to 1000.
 ```{r eval=FALSE}
 ## The maintained global preparation is in analysis/02_prepare_spatial/04_prepare_global_grid.R
 # dir <- "~/sofun/output_nc_global_sofun/"
-# gridfile <- "./data/df_grid.Rdata"
+# gridfile <- "./data/df_grid.rds"
 # if (file.exists(gridfile)){
-#   load(gridfile)
+#   df_grid <- readRDS(gridfile)
 # } else {
 #   df_grid <- get_df_landmask(dir)
-#   save(df_grid, file = gridfile)
+#   saveRDS(df_grid, file = gridfile)
 # }
 # df_mct <- get_plantwhc_mct_global(df_grid, dir)
 ```
@@ -44,14 +44,13 @@ Invoke all at once. This takes several days. Chunks of data are written to `./da
 Read chunks of output data files generated above into one data frame.
 ```{r}
 read_onefile <- function(path){
-  load(path)
-  return(df)
+  readRDS(path)
 }
 data_path <- "./data/v3/"
-files <-  list.files(data_path, pattern = "df_plantwhc_mct")
+files <- list.files(data_path, pattern = "^df_plantwhc_mct.*[.]rds$")
 df_mct <- purrr::map_dfr( files, ~read_onefile(paste0(data_path, .))) %>% 
   unnest(out_ilon_ilat)
-save(df_mct, file = "data/df_mct_v3.Rdata")
+saveRDS(df_mct, file = "data/df_mct_v3.rds")
 ```
 
 Extract return level (mm) for a given return period (yr) and convert data frame to an array (grid).
@@ -65,9 +64,7 @@ df_mct_v1 <- nc_to_df("data/whc_mct_20y_v1.nc") %>% rename(return_level_20y = my
   tidyr::drop_na()
 
 ## v3 data
-load("data/df_mct_v3.Rdata")
-df_mct_v3 <- df_mct
-rm("df_mct")
+df_mct_v3 <- readRDS("data/df_mct_v3.rds")
 
 df_mct_v3 <- df_mct_v3 %>% 
   mutate(return_level_20y = purrr::map(data, ~slice(., 4))) %>%   # 20-year return period is the 4th row

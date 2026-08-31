@@ -17,12 +17,12 @@ source("R/get_df_landmask.R")
 source("R/convert_et.R")
 
 grid_nc_file <- "~/data/watch_wfdei/WFDEI-elevation.nc"
-gridfile <- "./data/df_grid.Rdata"
+gridfile <- "./data/df_grid.rds"
 if (file.exists(gridfile)){
-  load(gridfile)
+  df_grid <- readRDS(gridfile)
 } else {
   df_grid <- get_df_landmask(grid_nc_file)
-  save(df_grid, file = gridfile)
+  saveRDS(df_grid, file = gridfile)
   
   ## test : yes, does the same
   rasta <- raster::raster(grid_nc_file)

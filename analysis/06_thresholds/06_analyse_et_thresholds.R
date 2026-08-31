@@ -4,9 +4,7 @@
 # Extracted from vignettes/archive/workflow_legacy.Rmd.
 source("analysis/_common.R")
 
-load("data/df_cwd_et0_3.RData")
-df_cwd_et0 <- df
-rm("df")
+df_cwd_et0 <- readRDS("data/df_cwd_et0_3.rds")
 
 ## Detect flattening
 df_cwd_et0 <- df_cwd_et0 |>
@@ -17,21 +15,21 @@ df_irr <- nc_to_df("~/data/irrigation/gmia_v5_aai_pct_0_05deg.nc", varnam = "aai
       mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) |> 
       rename(irr = aai)
 
-save(df_irr, file = "data/df_irr.RData")
-save(df_cwd_et0, file = "data/df_cwd_et0_3_flattening.RData")
+saveRDS(df_irr, file = "data/df_irr.rds")
+saveRDS(df_cwd_et0, file = "data/df_cwd_et0_3_flattening.rds")
 
 df_cwd_et0 |> 
   ggplot(aes(x = cwd_lue0_fet, ..density..)) +
   geom_histogram() +
   xlim(0, 2500)
 
-load("data/df_cwd_et0_3_flattening.RData")
-load("data/df_rivers.RData")
-load("data/df_irr.RData")
+df_cwd_et0 <- readRDS("data/df_cwd_et0_3_flattening.rds")
+df_rivers <- readRDS("data/df_rivers.rds")
+df_irr <- readRDS("data/df_irr.rds")
 source("R/plot_map_cwdx_type_irrigation.R")
 
 # ## apply vegetation mask
-# load("data/df_vegmask.RData") # loads df_vegmask
+# df_vegmask <- readRDS("data/df_vegmask.rds")
 # df_cwd_et0 <- df_cwd_et0 |> 
 #   left_join(df_vegmask |> dplyr::select(lon, lat, vegmask),
 #             by = c("lon", "lat")) |> 
@@ -75,7 +73,7 @@ ggsave("fig/fig2.pdf", width = 10, height = 5)
 
 ## save for publication figure
 gg_fig1c <- gg
-save(gg_fig1c, file = "data/gg_fig1c.Rdata")
+saveRDS(gg_fig1c, file = "data/gg_fig1c.rds")
 
 ## Western USA, multi layer map
 gg <- plot_map_cwdx_type_irrigation(
@@ -148,7 +146,7 @@ nc <- df_to_grid(df_cwd_et0 |> mutate(s0_teuling_fet = remove_outliers(s0_teulin
 write_nc2(nc, varnams = "s0_teuling_fet", lon = df_cwd_et0$lon |> unique() |> sort(), lat = df_cwd_et0$lat |> unique() |> sort(), path = "data/s0_teuling_fet.nc", make_zdim = FALSE)
 
 ## write as netcdf
-load("data/df_cwd_et0_3_flattening.RData")
+df_cwd_et0 <- readRDS("data/df_cwd_et0_3_flattening.rds")
 
 nc <- df_to_grid(df_cwd_et0, varnam = "flat_fet", lonnam = "lon", latnam = "lat")
 image(nc)
@@ -207,7 +205,7 @@ df_lc <- nc_to_df("~/data/landcover/modis_landcover__LPDAAC__v5.1__0.05deg__2010
   mutate(savannah_w = ifelse(landcover %in% c(9, 10), TRUE, FALSE), 
          savannah   = ifelse(landcover == 9, TRUE, FALSE))
 
-# load("data/df_gti.RData")
+# df_gti <- readRDS("data/df_gti.rds")
 
 df_tmp <- df_cwd_et0 |> 
   dplyr::select(lon, lat, flat_fet) |> 
@@ -260,7 +258,7 @@ df_irrbin <- df_tmp |>
   group_by(irr_bin) |> 
   summarise(f_flat = sum(flat_fet, na.rm = TRUE)/n())
 
-save(df_irrbin, file = "data/df_irrbin.RData")
+saveRDS(df_irrbin, file = "data/df_irrbin.rds")
 
 gg2 <- df_irrbin |> 
   drop_na() |> 
@@ -275,12 +273,10 @@ plot_grid(gg1, gg2, ncol = 2, labels = c('a', 'b'))
 ggsave("fig/flattening_analysis.pdf", width = 8, height = 4)
 ggsave("fig/flattening_analysis.png", width = 8, height = 4)
 
-load("data/df_cwd_et0_3.RData")
-df_cwd_et0 <- df
-rm("df")
+df_cwd_et0 <- readRDS("data/df_cwd_et0_3.rds")
 
 ## add vegetation mask (fraction of non-vegetated)
-load("data/df_vegmask.RData") # loads df_vegmask
+df_vegmask <- readRDS("data/df_vegmask.rds")
 df_cwd_et0 <- df_cwd_et0 |>
   left_join(df_vegmask |> dplyr::select(lon, lat, nonveg),
             by = c("lon", "lat"))
@@ -317,9 +313,9 @@ df_cwd_et0_agg <- df_cwd_et0 |>
   rename(lon = lon_mid, lat = lat_mid) |> 
   mutate(cwd_lue0_fet = ifelse(is.nan(cwd_lue0_fet), NA, cwd_lue0_fet))
 
-save(df_cwd_et0_agg, file = "data/df_cwd_et0_agg.RData")
+saveRDS(df_cwd_et0_agg, file = "data/df_cwd_et0_agg.rds")
 
-load("data/df_cwd_et0_agg.RData")
+df_cwd_et0_agg <- readRDS("data/df_cwd_et0_agg.rds")
 
 df_box <- tibble(
   long = c(45, 95, 95, 45, 45), lat = c(47.5, 47.5, 25, 25, 47.5),
@@ -357,10 +353,10 @@ ggsave("fig/map_cwd_lue0_fet.pdf", width = 10, height = 6)
 ggsave("fig/map_cwd_lue0_fet.png", width = 10, height = 6)
 
 gg_fig1a <- gg$ggmap
-save(gg_fig1a, file = "data/gg_fig1a.Rdata")
+saveRDS(gg_fig1a, file = "data/gg_fig1a.rds")
 
 gg_fig1_legend <- gg$gglegend
-save(gg_fig1_legend, file = "data/gg_fig1_legend.Rdata")
+saveRDS(gg_fig1_legend, file = "data/gg_fig1_legend.rds")
 
 df_corr <- read_nc_onefile("data/cwdx20_halfdeg.nc", varnam = "cwdx20") |> 
   nc_to_df(varnam = "cwdx20") |> 
@@ -445,26 +441,26 @@ gg_corr
 ggsave("fig/corr_cwd_lue0_nSIF_EF.pdf", width = 6, height = 5)
 ggsave("fig/corr_cwd_lue0_nSIF_EF.png", width = 6, height = 5)
 
-load("data/df_cwdx_10_20_40.RData") # loads 'df', created by analysis/04_cwd_extremes/04_collect_return_levels.R
+df <- readRDS("data/df_cwdx_10_20_40.rds")
 df_cwdx <- df |> 
   mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) 
 
 ## new version
-load("data/df_cwd_lue0_2.RData")
+df <- readRDS("data/df_cwd_lue0_2.rds")
 df_cwd_lue0 <- df |> 
   mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) 
 rm("df")
 
-load("data/df_cwd_et0_3.RData")  # loads 'df'
+df <- readRDS("data/df_cwd_et0_3.rds")
 df_cwd_et0 <- df |> 
   mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) 
 rm("df")
 
 ## old version
-# load("data/df_cwd_lue0_SIF.RData")
-# load("data/df_cwd_lue0_nSIF.RData")
-# load("data/df_cwd_lue0_et.RData")
-# load("data/df_cwd_lue0_fet.RData")
+# df_cwd_lue0_SIF <- readRDS("data/df_cwd_lue0_SIF.rds")
+# df_cwd_lue0_nSIF <- readRDS("data/df_cwd_lue0_nSIF.rds")
+# df_cwd_lue0_et <- readRDS("data/df_cwd_lue0_et.rds")
+# df_cwd_lue0_fet <- readRDS("data/df_cwd_lue0_fet.rds")
 
 nc_landcover <- read_nc_onefile("~/data/landcover/modis_landcover__LPDAAC__v5.1__0.05deg__2010.nc", varnam = "landcover")
 df_biome <- read_csv("~/data/biomes/wwf_ecoregions/biome_id.csv") |> 
@@ -485,4 +481,4 @@ df_corr <- df_cwdx |>
   mutate(forest = biome %in% c(1,2,3,4,5,6,12),
          grassland = biome %in% c(7,8))
 
-save(df_corr, file = "data/df_corr.RData")
+saveRDS(df_corr, file = "data/df_corr.rds")

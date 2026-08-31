@@ -4,7 +4,7 @@ check_avail_alexi_tidy <- function(ilon){
   
   ## written by analysis/01_tidy_inputs/05_alexi.R via map2tidy
   dir <- "~/data/alexi_tir/data_tidy/"
-  filnam <- paste0("EDAY_CERES__ilon_", ilon, ".RData")
+  filnam <- paste0("EDAY_CERES__ilon_", ilon, ".rds")
   avl <- file.exists(paste0(dir, filnam))
   
   return(avl)
@@ -14,7 +14,7 @@ check_avail_et_mm <- function(ilon){
   
   ## written by R/get_et_mm_bylon.R
   dir <- "data/df_alexi_et_mm/"
-  filnam <- paste0("df_alexi_et_mm_ilon_", ilon, ".RData")
+  filnam <- paste0("df_alexi_et_mm_ilon_", ilon, ".rds")
   avl <- file.exists(paste0(dir, filnam))
   
   return(avl)
@@ -24,7 +24,7 @@ check_avail_snow <- function(ilon){
   
   ## written by R/simulate_snow_byilon.R
   dirn <- "data/df_snow/"
-  filn <- paste0("df_snow_ilon_", ilon, ".RData")
+  filn <- paste0("df_snow_ilon_", ilon, ".rds")
   avl <- file.exists(paste0(dirn, filn))
   
   return(avl)
@@ -34,7 +34,7 @@ check_avail_bal <- function(ilon){
   
   ## written by R/get_bal_byilon.R
   dirn <- "data/df_bal/"
-  filn <- paste0("df_bal_ilon_", ilon, ".RData")
+  filn <- paste0("df_bal_ilon_", ilon, ".rds")
   avl <- file.exists(paste0(dirn, filn))
   
   return(avl)
@@ -44,7 +44,7 @@ check_avail_cwdx <- function(ilon){
   
   ## written by R/get_cwdx_byilon.R
   dirn <- "data/df_cwdx/"
-  filn <- paste0("df_cwdx_ilon_", ilon, ".RData")
+  filn <- paste0("df_cwdx_ilon_", ilon, ".rds")
   avl <- file.exists(paste0(dirn, filn))
   
   return(avl)
@@ -54,7 +54,7 @@ check_avail_10_20_40 <- function(ilon){
   
   ## written by R/extract_cwdx_byilon.R
   dirn <- "data/df_cwdx_10_20_40/"
-  filn <- paste0("df_cwdx_10_20_40_ilon_", ilon, ".RData")
+  filn <- paste0("df_cwdx_10_20_40_ilon_", ilon, ".rds")
   avl <- file.exists(paste0(dirn, filn))
   
   return(avl)
@@ -64,7 +64,7 @@ check_avail_sif_jj <- function(ilon){
   
   ## written by R/extract_cwdx_byilon.R
   dirn <- "~/data/gome_2_sif_downscaled/data_tidy/"
-  filn <- paste0("GOME_JJ_dcSIF_005deg_8day__ilon_", ilon, ".RData")
+  filn <- paste0("GOME_JJ_dcSIF_005deg_8day__ilon_", ilon, ".rds")
   avl <- file.exists(paste0(dirn, filn))
   
   return(avl)
@@ -74,7 +74,7 @@ check_avail_sif_pk <- function(ilon){
   
   ## written by R/extract_cwdx_byilon.R
   dirn <- "~/data/gome_2_sif_downscaled/data_tidy/"
-  filn <- paste0("GOME_PK_dcSIF_005deg_8day__ilon_", ilon, ".RData")
+  filn <- paste0("GOME_PK_dcSIF_005deg_8day__ilon_", ilon, ".rds")
   avl <- file.exists(paste0(dirn, filn))
   
   return(avl)
@@ -84,7 +84,7 @@ check_avail_glass <- function(ilon){
   
   ## written by R/extract_cwdx_byilon.R
   dirn <- "~/data/glass/data_tidy/"
-  filn <- paste0("GLASS07B01.V41._ilon_", ilon, ".RData")
+  filn <- paste0("GLASS07B01.V41._ilon_", ilon, ".rds")
   avl <- file.exists(paste0(dirn, filn))
   
   return(avl)
@@ -94,7 +94,7 @@ check_avail_cwd_et0 <- function(ilon){
   
   ## written by R/get_cwd_et0_byilon.R
   dirn <- "data/df_cwd_et0/"
-  filn <- paste0("df_cwd_et0_", ilon, ".RData")
+  filn <- paste0("df_cwd_et0_", ilon, ".rds")
   avl <- file.exists(paste0(dirn, filn))
   
   return(avl)
@@ -104,7 +104,7 @@ check_avail_cwd_lue0 <- function(ilon){
   
   ## written by R/get_cwd_lue0_byilon.R
   dirn <- "data/df_cwd_lue0/"
-  filn <- paste0("df_cwd_lue0_", ilon, ".RData")
+  filn <- paste0("df_cwd_lue0_", ilon, ".rds")
   avl <- file.exists(paste0(dirn, filn))
   
   return(avl)
@@ -136,9 +136,9 @@ df <- tibble(ilon = 1:7200) %>%
     # avl_cwd_lue0 = check_avail_cwd_lue0(ilon)
   )
 
-save(df, file = "./data/df_file_availability_cwdx_10_20_40.RData")
+saveRDS(df, file = "./data/df_file_availability_cwdx_10_20_40.rds")
 
-#load("./data/df_file_availability_cwd_lue0.RData")
+# df_file_availability_cwd_lue0 <- readRDS("./data/df_file_availability_cwd_lue0.rds")
 
 # ## display missing
 # df %>% 

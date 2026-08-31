@@ -13,8 +13,8 @@ source("R/workflow_helpers.R")
 source("R/get_cwdx_byilon.R")
 
 args <- chunk_arguments()
-require_files("data/df_cwdx_10_20_40.RData", "failed-cell repair")
-load("data/df_cwdx_10_20_40.RData")
+require_files("data/df_cwdx_10_20_40.rds", "failed-cell repair")
+df <- readRDS("data/df_cwdx_10_20_40.rds")
 
 df_nested <- df %>%
   dplyr::filter(is.na(cwdx20), lat > -60, lat < 75) %>%

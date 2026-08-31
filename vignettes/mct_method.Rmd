@@ -49,10 +49,10 @@ The steps for the method are:
 Let's try this out for the FLUXNET one site for which whe have these variables. Read FLUXNET meteo data from FLUXNET stations (and years), written by `analysis/08_site_analysis/03_evaluate_fluxnet.R`.
 ```{r}
 ## meteo data 
-load("./data/ddf_meteo.Rdata")
+ddf_meteo <- readRDS("./data/ddf_meteo.rds")
 
 ## re-read ET data from FLUXNET and don't remove (filter) any data
-filn <- "data/ddf_eval_all.Rdata"
+filn <- "data/ddf_eval_all.rds"
 if (!file.exists(filn)){
   ddf_eval <- ingest(
     siteinfo = siteinfo,
@@ -62,9 +62,9 @@ if (!file.exists(filn)){
     settings  = list(threshold_GPP = 0.8, threshold_LE = 0.0, getswc = FALSE, filter_ntdt = TRUE, remove_neg = FALSE),
     timescale = "d"
   )
-  save(ddf_eval, file = filn)
+  saveRDS(ddf_eval, file = filn)
 } else {
-  load(filn)
+  ddf_eval <- readRDS(filn)
 }
 
 ## combine FLUXNET meteo and ET data
@@ -114,8 +114,8 @@ ddf_fluxnet$data[[3]] %>%
 
 Read ALEXI ET and WATCH-WFDEI data at FLUXNET sites, written by `analysis/02_prepare_spatial/02_get_fluxnet_data.R`, and add SIF data.
 ```{r}
-load("data/df_alexi.Rdata")
-load("data/df_sif.Rdata")
+df_alexi <- readRDS("data/df_alexi.rds")
+df_sif <- readRDS("data/df_sif.rds")
 
 df_alexi <- df_alexi %>% 
   unnest(df) %>% 
@@ -894,7 +894,7 @@ out
 
 All of the above evaluated steps are implemented in one function, producing plot files for each site separately.
 ```{r}
-filn <- "data/out.Rdata"
+filn <- "data/out_L2.rds"
 if (!file.exists(filn)){
   allsites <- ddf_fluxnet %>% 
     pull(sitename)
@@ -912,9 +912,9 @@ if (!file.exists(filn)){
      fittype = "Gumbel"
    )
   }
-  save(out, file = "data/out_L2.Rdata")
+  saveRDS(out, file = filn)
 } else {
-  load(filn)
+  out <- readRDS(filn)
 }
 
 ## for some reason, purrr::map() did not work here.

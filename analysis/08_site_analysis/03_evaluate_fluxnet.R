@@ -37,16 +37,16 @@ source("R/align_events.R")
 # ## df_grid must contain columns lon, lat, elv, and idx 
 # 
 # ## PT-JPL, covering 1984-2007
-# load("data/df_pt_jpl.Rdata")
+# df_pt_jpl <- readRDS("data/df_pt_jpl.rds")
 # 
 # ## PM, covering 1984-2007
-# load("data/df_pm_mod.Rdata")
+# df_pm_mod <- readRDS("data/df_pm_mod.rds")
 # 
 # ## SEBS, covering 1984-2007
-# load("data/df_sebs.Rdata")
+# df_sebs <- readRDS("data/df_sebs.rds")
 # 
 # ## ALEXI, covering 2003-2018
-# load("data/df_alexi.Rdata")
+# df_alexi <- readRDS("data/df_alexi.rds")
 # 
 # # ## example plots for one site
 # # ggplot() +
@@ -63,7 +63,7 @@ source("R/align_events.R")
 # ## Get data from FLUXNET2015 using ingestr
 # ##------------------------------------------------------------------------
 # ## meteo forcing data
-# filn <- "./data/ddf_meteo.Rdata"
+# filn <- "./data/ddf_meteo.rds"
 # if (!file.existrs(filn)){
 #   ddf_meteo <- ingest(
 #     source    = "fluxnet",
@@ -73,13 +73,13 @@ source("R/align_events.R")
 #     settings  = list(dir_hh = "~/data/FLUXNET-2015_Tier1/20191024/HH/", getswc = FALSE),
 #     timescale = "d"
 #   )
-#   save(ddf_meteo, file = filn)
+#   saveRDS(ddf_meteo, file = filn)
 # } else {
-#   load(filn)
+#   ddf_meteo <- readRDS(filn)
 # }
 # 
 # ## get data for idfferent time scales separately
-# filn <- "data/ddf_eval.Rdata"
+# filn <- "data/ddf_eval.rds"
 # if (!file.exists(filn)){
 #   ddf_eval <- ingest(
 #     siteinfo = siteinfo,
@@ -89,9 +89,9 @@ source("R/align_events.R")
 #     settings  = list(threshold_LE = 0.8, getswc = TRUE),
 #     timescale = "d"
 #     )
-#   save(ddf_eval, file = filn)
+#   saveRDS(ddf_eval, file = filn)
 # } else {
-#   load(filn)
+#   ddf_eval <- readRDS(filn)
 # }
 # 
 # ## test plot
@@ -101,7 +101,7 @@ source("R/align_events.R")
 #   geom_line(data = df_sebs %>% dplyr::filter(idx == "FR-Pue") %>% unnest(df), aes(x = date, y = et), col = "springgreen3") +
 #   xlim(ymd("2004-01-01"), ymd("2007-01-01"))
 # 
-# filn <- "data/mdf_eval.Rdata"
+# filn <- "data/mdf_eval.rds"
 # if (!file.exists(filn)){
 #   mdf_eval <- ingest(
 #     siteinfo = siteinfo,
@@ -113,12 +113,12 @@ source("R/align_events.R")
 #     )
 #     # ) %>% 
 #     # tidyr::drop_na(latenth)
-#   save(mdf_eval, file = filn)
+#   saveRDS(mdf_eval, file = filn)
 # } else {
-#   load(filn)
+#   mdf_eval <- readRDS(filn)
 # }
 # 
-# filn <- "data/adf_eval.Rdata"
+# filn <- "data/adf_eval.rds"
 # if (!file.exists(filn)){
 #   adf_eval <- ingest(
 #     siteinfo = siteinfo,
@@ -129,9 +129,9 @@ source("R/align_events.R")
 #     timescale = "y"
 #     ) 
 #     # tidyr::drop_na(latenth)
-#   save(adf_eval, file = filn)
+#   saveRDS(adf_eval, file = filn)
 # } else {
-#   load(filn)
+#   adf_eval <- readRDS(filn)
 # }
 # 
 # settings_eval <- list(
@@ -175,7 +175,7 @@ source("R/align_events.R")
 # # out_eval_pt_jpl$latenth$fluxnet$data$ddf %>% 
 # #   analyse_modobs2("mod", "obs", type = "heat")
 # 
-# save(out_eval_pt_jpl, file = "data/out_eval_pt_jpl.Rdata")
+# saveRDS(out_eval_pt_jpl, file = "data/out_eval_pt_jpl.rds")
 # 
 # ## PM-MOD
 # mod_pm_mod <- df_pm_mod %>% 
@@ -189,7 +189,7 @@ source("R/align_events.R")
 #   overwrite = TRUE, 
 #   light = TRUE )
 # 
-# save(out_eval_pm_mod, file = "./data/out_eval_pm_mod.Rdata")
+# saveRDS(out_eval_pm_mod, file = "./data/out_eval_pm_mod.rds")
 # 
 # 
 # ## SEBS
@@ -204,7 +204,7 @@ source("R/align_events.R")
 #   overwrite = TRUE, 
 #   light = TRUE )
 # 
-# save(out_eval_sebs, file = "./data/out_eval_sebs.Rdata")
+# saveRDS(out_eval_sebs, file = "./data/out_eval_sebs.rds")
 # 
 # 
 # ## ALEXI
@@ -219,7 +219,7 @@ source("R/align_events.R")
 #   overwrite = TRUE, 
 #   light = TRUE )
 # 
-# save(out_eval_alexi, file = "./data/out_eval_alexi.Rdata")
+# saveRDS(out_eval_alexi, file = "./data/out_eval_alexi.rds")
 # 
 # 
 # ## some test plots
@@ -377,8 +377,8 @@ library(patchwork)
 gg_alg_pt_jpl + gg_alg_pm + gg_alg_sebs + gg_alg_alexi + plot_layout(nrow = 2)
 ggsave("fig/et_bias_droughtday.pdf", width = 10, height = 8)
 
-save(df_alg, file = "data/df_alg.Rdata")
-write_csv(df_alg$df_dday_aggbydday, path = "data/df_alg__df_dday_aggbydday.Rdata")
+saveRDS(df_alg, file = "data/df_alg.rds")
+saveRDS(df_alg$df_dday_aggbydday, file = "data/df_alg__df_dday_aggbydday.rds")
 
 ##------------------------------------------------------------------------
 ## Some test plots
@@ -439,4 +439,3 @@ df_eval %>%
 
 df_eval %>%
   analyse_modobs2("et_alexi", "et_fluxnet", type = "heat")
-

@@ -2,11 +2,11 @@ collect_cwd_lue0_byilon <- function(ilon){
   
   ## construct output file name
   dirn <- "data/df_cwd_lue0_2/"
-  filn <- paste0("df_cwd_lue0_", ilon, ".RData")
+  filn <- paste0("df_cwd_lue0_", ilon, ".rds")
   path <- paste0(dirn, filn)
   
   if (file.exists(path)){
-    load(path)
+    df <- readRDS(path)
   } else {
     rlang::inform(paste("File does not exist:", path))
     df <- NULL
