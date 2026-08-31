@@ -106,4 +106,4 @@ ddf <- ddf %>%
   dplyr::mutate( out_mct_95 = purrr::map(data, ~get_plantwhc_mct_bysite(., varname_wbal = "wbal", thresh_deficit = 0.95)) )  
 
 ## write to file
-save(ddf, file = "data/ddf_mct_simsuite.Rdata")
+saveRDS(ddf, file = "data/ddf_mct_simsuite.rds")

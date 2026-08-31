@@ -250,16 +250,16 @@ settings_calib <- list(
  
 Get calibration target data.
 ```{r warning=FALSE, messge=FALSE}
-filn <- "./data/ddf_obs_calib.Rdata"
+filn <- "./data/ddf_obs_calib.rds"
 if (!file.exists(filn)){
   ddf_obs_calib <- get_obs_calib( 
     settings_calib = settings_calib, 
     dplyr::select(df_drivers, sitename, siteinfo) %>% tidyr::unnest(siteinfo), 
     settings_input
     )
-  save(ddf_obs_calib, file = filn)
+  saveRDS(ddf_obs_calib, file = filn)
 } else {
-  load(filn)
+  ddf_obs_calib <- readRDS(filn)
 }
 ```
 
@@ -285,9 +285,9 @@ settings_eval <- list(
 
 Get evaluation data (benchmarking data).
 ```{r}
-filn <- "./obs_eval.Rdata"
+filn <- "./obs_eval.rds"
 if (file.exists(filn)){
-  load(filn)
+  obs_eval <- readRDS(filn)
 } else {
   obs_eval  <- get_obs_eval( 
     settings_eval = settings_eval, 
@@ -296,7 +296,7 @@ if (file.exists(filn)){
     light         = TRUE,
     add_forcing   = FALSE
   )
-  save(obs_eval, file = filn)
+  saveRDS(obs_eval, file = filn)
 } 
 ```
 
@@ -304,9 +304,9 @@ if (file.exists(filn)){
 
 Site-by-site calibration/evaluation (not out-of-bag!)
 ```{r}
-filn <- "./data/out_sitebysite.Rdata"
+filn <- "./data/out_sitebysite.rds"
 if (file.exists(filn)){
-  load(filn)
+  out_sitebysite <- readRDS(filn)
 } else {
   out_sitebysite <- sbs_calib_eval_sofun( 
     settings_calib, 
@@ -317,7 +317,7 @@ if (file.exists(filn)){
     obs_eval = obs_eval,
     overwrite = TRUE
     )
-  save(out_sitebysite, file = filn)
+  saveRDS(out_sitebysite, file = filn)
 }
 ```
 

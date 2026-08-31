@@ -4,7 +4,7 @@
 # Extracted from vignettes/archive/workflow_legacy.Rmd.
 source("analysis/_common.R")
 
-load("data/df_rl_fet.RData")  # loads df_rl_fet
+df_rl_fet <- readRDS("data/df_rl_fet.rds")
 
 ## function to determine the return period with the lowest bias (absolute)
 find_rp_diag <- function(df){
@@ -52,7 +52,7 @@ df_rl_agg_fet <- df_rl_fet |>
   dplyr::select(-data) |> 
   rename(lon = lon_mid, lat = lat_mid)
 
-save(df_rl_agg_fet, file = "data/df_rl_agg_fet.RData")
+saveRDS(df_rl_agg_fet, file = "data/df_rl_agg_fet.rds")
 
 ## distribution of diagnosed return periods
 df_rl_agg_fet |> 
@@ -67,9 +67,9 @@ df_rl_fet |>
   geom_hline(yintercept = 0, linetype = "dotted") +
   ylim(-1.2, 1.2)
 
-save(df_rl_fet, file = "data/df_rl_fet.RData")
+saveRDS(df_rl_fet, file = "data/df_rl_fet.rds")
 
-load("data/df_rl_agg_fet.RData")
+df_rl_agg_fet <- readRDS("data/df_rl_agg_fet.rds")
 
 # nc <- df_to_grid(
 #   df_rl_agg, 
@@ -99,15 +99,15 @@ gg$ggmap <- gg$ggmap + labs(title = expression(italic(T)[EF]))
 cowplot::plot_grid(gg$ggmap, gg$gglegend, ncol = 1, rel_heights = c(1, 0.3))
 gg_fig4a <- gg$ggmap
 gg_fig4_legend <- gg$gglegend
-save(gg_fig4a, file = "data/gg_fig5a.Rdata")
+saveRDS(gg_fig4a, file = "data/gg_fig5a.rds")
 
 ggsave("fig/map_rp_fet.pdf", width = 8, height = 5)
 ggsave("fig/map_rp_fet.png", width = 8, height = 5)
 
-load("data/df_rl_nSIF.RData")
+df_rl_nSIF <- readRDS("data/df_rl_nSIF.rds")
 
 # ## xxx debug
-# load("data/df_rl/df_rl_fet_ichunk_TEST.RData")  # loads df
+# df <- readRDS("data/df_rl/df_rl_fet_ichunk_TEST.rds")
 # df_rl_fet <- df
 
 ## function to determine the return period with the lowest bias (absolute)
@@ -156,7 +156,7 @@ df_rl_agg_nSIF <- df_rl_nSIF |>
   dplyr::select(-data) |> 
   rename(lon = lon_mid, lat = lat_mid)
 
-save(df_rl_agg_nSIF, file = "data/df_rl_agg_nSIF.RData")
+saveRDS(df_rl_agg_nSIF, file = "data/df_rl_agg_nSIF.rds")
 
 ## distribution of diagnosed return periods
 df_rl_agg_nSIF |> 
@@ -171,7 +171,7 @@ df_rl_nSIF |>
   geom_hline(yintercept = 0, linetype = "dotted") +
   ylim(-1.2, 1.2)
 
-load("data/df_rl_agg_nSIF.RData")
+df_rl_agg_nSIF <- readRDS("data/df_rl_agg_nSIF.rds")
 
 # nc <- df_to_grid(
 #   df_rl_agg, 
@@ -198,7 +198,7 @@ gg <- plot_map4(df_rl_agg_nSIF,
 gg$ggmap <- gg$ggmap + labs(title = expression(italic(T)[SIF]))
 
 gg_fig4b <- gg$ggmap
-save(gg_fig4b, file = "data/gg_fig5b.Rdata")
+saveRDS(gg_fig4b, file = "data/gg_fig5b.rds")
 
 ggsave("fig/map_rp_nsif.pdf", width = 8, height = 5)
 ggsave("fig/map_rp_nsif.pdf", width = 8, height = 5)
@@ -244,7 +244,7 @@ df_rl_agg <- df_rl_agg_nSIF |>
                                  rp_diag_nsif,
                                  (rp_diag_fet + rp_diag_nsif) / 2)))
 
-save(df_rl_agg, file = "data/df_rl_agg.RData")
+saveRDS(df_rl_agg, file = "data/df_rl_agg.rds")
 
 plot_map4(df_rl_agg, varnam = "rp_diag")
 ggsave("fig/map_rl.pdf", width = 12, height = 8)
@@ -280,9 +280,9 @@ df_rl_agg_test <- tmp_gti |>
          ssdth_bin = cut(ssdth, seq(0, 50, by = 5))) |> 
   mutate(forest = ifelse(forestcoverfraction > 0.4, TRUE, FALSE))
 
-save(df_rl_agg_test, file = "data/df_rl_agg_test.Rdata")
+saveRDS(df_rl_agg_test, file = "data/df_rl_agg_test.rds")
 
-load("data/df_rl_agg_test.Rdata")
+df_rl_agg_test <- readRDS("data/df_rl_agg_test.rds")
 
 n_fun <- function(x){
   return(data.frame(y = 520,
@@ -349,4 +349,3 @@ mod_rp_diag <- ranger(
   respect.unordered.factors = "order",
   seed = 123
 )
-

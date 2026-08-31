@@ -11,7 +11,7 @@ get_plantwhc_mct_global <- function(df,
   # #filn <- paste0(dir, "s1_fapar3g_v3_global.", as.character(year), ".d.wbal.nc")
   # list_filn <- list.files(path = dir, pattern = "s1_fapar3g_v4_global.*.d.wbal.nc")
   # list_nc <- purrr::map(list_filn, ~read_nc_onefile(paste0(dir, .)))
-  # list_df <- purrr::map(list_nc, ~nc_to_df(., dropna = TRUE, filn = "./test.Rdata"))
+  # list_df <- purrr::map(list_nc, ~nc_to_df(., dropna = TRUE, filn = "./test.rds"))
 
   if (do_slice){
     ##-------------------------------------------------
@@ -152,15 +152,15 @@ get_plantwhc_mct_chunk <- function(df, idx,
   # df <- df %>% 
   #   mutate(data = purrr::map(out_ilon_ilat, ~get_plantwhc_mct_gridcell( .$ilon, .$ilat, ...)))
   
-  # outfil <- paste0("./data/v3/df_plantwhc_mct", as.character(idx), ".Rdata")
+  # outfil <- paste0("./data/v3/df_plantwhc_mct", as.character(idx), ".rds")
   # print(paste("Saving to", outfil, "..."))
-  # save(df, file = outfil)
+  # saveRDS(df, file = outfil)
   # print("... done.")
-  # save(idx, file = "./data/idx.Rdata")
+  # saveRDS(idx, file = "./data/idx.rds")
   # dir <- "~/sofun/output_nc_global_sofun/"
-  # gridfile <- "./data/df_grid.Rdata"
-  # load(gridfile)
-  # load <- "./data/idx.Rdata"
+  # gridfile <- "./data/df_grid.rds"
+  # df_grid <- readRDS(gridfile)
+  # idx <- readRDS("./data/idx.rds")
   
   return(df)
 }

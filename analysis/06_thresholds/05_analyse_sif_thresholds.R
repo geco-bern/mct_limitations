@@ -4,11 +4,9 @@
 # Extracted from vignettes/archive/workflow_legacy.Rmd.
 source("analysis/_common.R")
 
-load("data/df_cwd_lue0_2.RData")
-df_cwd_lue0 <- df
-rm("df")
+df_cwd_lue0 <- readRDS("data/df_cwd_lue0_2.rds")
 
-load("data/df_rivers.RData")
+df_rivers <- readRDS("data/df_rivers.rds")
 source("R/plot_map_cwdx_type_irrigation.R")
 
 ## Detect flattening
@@ -117,7 +115,7 @@ ggsave("fig/map_cwd_lue0_types_lue0_europe.pdf", width = 8, height = 6)
 ggsave("fig/map_cwd_lue0_types_lue0_europe.png", width = 8, height = 6)
 
 ## add vegetation mask (fraction of non-vegetated)
-# load("data/df_vegmask.RData") # loads df_vegmask
+# df_vegmask <- readRDS("data/df_vegmask.rds")
 df_cwd_lue0 <- df_cwd_lue0 |>
   left_join(df_vegmask |> dplyr::select(lon, lat, nonveg),
             by = c("lon", "lat"))
@@ -157,9 +155,9 @@ df_cwd_lue0_agg <- df_cwd_lue0 |>
   mutate(cwd_lue0_SIF = ifelse(is.nan(cwd_lue0_SIF), NA, cwd_lue0_SIF),
          cwd_lue0_nSIF = ifelse(is.nan(cwd_lue0_nSIF), NA, cwd_lue0_nSIF))
 
-save(df_cwd_lue0_agg, file = "data/df_cwd_lue0_agg.Rdata")
+saveRDS(df_cwd_lue0_agg, file = "data/df_cwd_lue0_agg.rds")
 
-load("data/df_cwd_lue0_agg.Rdata")
+df_cwd_lue0_agg <- readRDS("data/df_cwd_lue0_agg.rds")
 
 # apply vegetation mask
 df_cwd_lue0_agg <- df_cwd_lue0_agg |> 
@@ -188,7 +186,7 @@ ggsave("fig/map_cwd_lue0_nSIF.png", width = 10, height = 6)
 
 gg_fig1b <- gg$ggmap
 gg_fig1_legend <- gg$gglegend
-save(gg_fig1b, file = "data/gg_fig1b.Rdata")
+saveRDS(gg_fig1b, file = "data/gg_fig1b.rds")
 
 # ## lambda_decay_SIF
 # nc_tenthdeg <- read_nc_onefile("data/lambda_decay_SIF_tenthdeg.nc", varnam = "lambda_decay_SIF")
@@ -223,4 +221,3 @@ saveRDS(ilon_missing, file = "data/ilon_missing.rds")
 
 plot(lon_all, !(lon_all %in% lon_avl), type = "l")
 plot(!(lon_all %in% lon_avl), type = "l")
-

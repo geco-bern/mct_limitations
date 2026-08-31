@@ -6,22 +6,22 @@ simulate_snow_byilon <- function(ilon){
   convert_prec_watch <- function(x){ x * 60 * 60 * 24 }  # kg/m2/s -> mm/day
 
   dirn <- "data/df_snow/"
-  filn <- paste0("df_snow_ilon_", ilon, ".RData")
+  filn <- paste0("df_snow_ilon_", ilon, ".rds")
   if (!dir.exists(dirn)) system("mkdir -p data/df_snow")
   path <- paste0(dirn, filn)
 
   if (!file.exists(path)){
    
     ## get all WATCH-WFDEI data of corresponding longitude slice
-    load(paste0("~/data/watch_wfdei/data_tidy/Tair_daily_WFDEI__ilon_", ilon, ".RData"))
+    df <- readRDS(paste0("~/data/watch_wfdei/data_tidy/Tair_daily_WFDEI__ilon_", ilon, ".rds"))
     df_temp <- df
     rm("df")
     
-    load(paste0("~/data/watch_wfdei/data_tidy/Rainf_daily_WFDEI_CRU__ilon_", ilon, ".RData"))
+    df <- readRDS(paste0("~/data/watch_wfdei/data_tidy/Rainf_daily_WFDEI_CRU__ilon_", ilon, ".rds"))
     df_prec <- df
     rm("df")
     
-    load(paste0("~/data/watch_wfdei/data_tidy/Snowf_daily_WFDEI_CRU__ilon_", ilon, ".RData"))
+    df <- readRDS(paste0("~/data/watch_wfdei/data_tidy/Snowf_daily_WFDEI_CRU__ilon_", ilon, ".rds"))
     df_snow <- df
     rm("df")
     
@@ -73,7 +73,7 @@ simulate_snow_byilon <- function(ilon){
     rm("df_snow")
     
     print(paste("Writing file: ", path))
-    save(df, file = path) 
+    saveRDS(df, file = path)
     
   } else {
     print(paste("File exists already: ", path))

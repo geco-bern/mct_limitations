@@ -7,7 +7,7 @@ calc_cwd_lue0_byilon <- function(ilon, drop_data = TRUE, dirn = "data/df_cwd_lue
   }
   
   ## construct output file name
-  filn <- paste0("df_cwd_lue0_", ilon, ".RData")
+  filn <- paste0("df_cwd_lue0_", ilon, ".rds")
   if (!dir.exists(dirn)) system(paste0("mkdir -p ", dirn))
   path <- paste0(dirn, "/", filn)
   
@@ -17,7 +17,7 @@ calc_cwd_lue0_byilon <- function(ilon, drop_data = TRUE, dirn = "data/df_cwd_lue
     lon_lores <- seq(-179.75, 179.75, by = 0.5)
     lon_hires <- seq(-179.975, 179.975, by = 0.05)
     ilon_lores <- which.min(abs(lon_lores - lon_hires[ilon]))
-    load(paste0("~/data/watch_wfdei/data_tidy/SWdown_daily_WFDEI__ilon_", ilon_lores, ".RData"))
+    df <- readRDS(paste0("~/data/watch_wfdei/data_tidy/SWdown_daily_WFDEI__ilon_", ilon_lores, ".rds"))
     df_sw <- df %>% 
       mutate(lon = round(lon, digits = 2), lat = round(lat, digits = 2))
     rm("df")
@@ -34,8 +34,8 @@ calc_cwd_lue0_byilon <- function(ilon, drop_data = TRUE, dirn = "data/df_cwd_lue
     
     ## Open file CWDX output
     dirn <- "data/df_cwdx/"
-    filn <- paste0("df_cwdx_ilon_", ilon, ".RData")
-    load(paste0(dirn, filn)) # loads 'df'
+    filn <- paste0("df_cwdx_ilon_", ilon, ".rds")
+    df <- readRDS(paste0(dirn, filn))
     
     ## extract data from CWDX output. This now contains the CWD and instances information
     df_cwd <- df %>% 
@@ -48,17 +48,17 @@ calc_cwd_lue0_byilon <- function(ilon, drop_data = TRUE, dirn = "data/df_cwd_lue
     
     ## Load SiF data
     ## version PK
-    filn <- paste0("GOME_PK_dcSIF_005deg_8day__ilon_", ilon, ".RData")
+    filn <- paste0("GOME_PK_dcSIF_005deg_8day__ilon_", ilon, ".rds")
     dirn <- "~/data/gome_2_sif_downscaled/data_tidy/"
-    load(paste0(dirn, filn)) # loads 'df'
+    df <- readRDS(paste0(dirn, filn))
     df_pk <- df %>% 
       mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) %>%
       rename(data_pk = data)
     
     ## version JJ
-    filn <- paste0("GOME_JJ_dcSIF_005deg_8day__ilon_", ilon, ".RData")
+    filn <- paste0("GOME_JJ_dcSIF_005deg_8day__ilon_", ilon, ".rds")
     dirn <- "~/data/gome_2_sif_downscaled/data_tidy/"
-    load(paste0(dirn, filn)) # loads 'df'
+    df <- readRDS(paste0(dirn, filn))
     
     df <- df %>% 
       
@@ -125,7 +125,7 @@ calc_cwd_lue0_byilon <- function(ilon, drop_data = TRUE, dirn = "data/df_cwd_lue
 
     ## write to file
     print(paste("Writing file:", path))
-    save(df, file = path)  
+    saveRDS(df, file = path)
     
   } else {
     print(paste("File exists already:", path))

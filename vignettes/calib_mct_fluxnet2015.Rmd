@@ -265,9 +265,9 @@ settings_eval <- list(
 
 Get evaluation data (benchmarking data).
 ```{r}
-filn <- "./obs_eval.Rdata"
+filn <- "./obs_eval.rds"
 if (file.exists(filn)){
-  load(filn)
+  obs_eval <- readRDS(filn)
 } else {
   obs_eval  <- get_obs_eval( 
     settings_eval = settings_eval, 
@@ -276,7 +276,7 @@ if (file.exists(filn)){
     light         = TRUE,
     add_forcing   = FALSE
   )
-  save(obs_eval, file = filn)
+  saveRDS(obs_eval, file = filn)
 } 
 ```
 

@@ -1,6 +1,6 @@
 calc_return_period <- function(ilon, df_s0){
   
-  load(paste0("data/df_cwdx/df_cwdx_ilon_", ilon, ".RData"))
+  df <- readRDS(paste0("data/df_cwdx/df_cwdx_ilon_", ilon, ".rds"))
   
   df_s0 %>% 
     mutate(lat = round(lat, digits = 3)) %>% 
@@ -41,6 +41,5 @@ extract_scale <- function(mod){
     return(NA)
   }
 }
-
 
 

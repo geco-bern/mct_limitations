@@ -76,13 +76,13 @@ required chunks are present.
 
 | Stage | Purpose | Main checkpoint |
 |---|---|---|
-| `01_tidy_inputs` | Convert gridded NetCDF inputs to nested tidy R data using `map2tidy` | established `*_ilon_*.RData` files in external `data_tidy` directories |
+| `01_tidy_inputs` | Convert gridded NetCDF inputs to nested tidy R data using `map2tidy` | established `*_ilon_*.rds` files in external `data_tidy` directories |
 | `02_prepare_spatial` | Prepare site metadata, masks, grids, and spatial inputs | site/grid objects in `data/` |
-| `03_water_balance` | Convert ET, simulate snow, and calculate daily balance | `data/df_bal/df_bal_ilon_*.RData` |
-| `04_cwd_extremes` | Fit cumulative-water-deficit extremes and collect return levels | `data/df_cwdx_10_20_40.RData` |
-| `05_soil` | Calculate and combine soil hydraulic properties, then rooting depth | `df_whc_hires_ilon_*.RData` and combined WHC objects |
-| `06_thresholds` | Diagnose SIF- and ET-based CWD thresholds | `data/df_cwd_lue0_2.RData`, `data/df_cwd_et0_3.RData` |
-| `07_return_periods` | Calculate, diagnose, and collect return periods | `data/df_rl_*.RData`, `data/df_rp_diag_*.RData` |
+| `03_water_balance` | Convert ET, simulate snow, and calculate daily balance | `data/df_bal/df_bal_ilon_*.rds` |
+| `04_cwd_extremes` | Fit cumulative-water-deficit extremes and collect return levels | `data/df_cwdx_10_20_40.rds` |
+| `05_soil` | Calculate and combine soil hydraulic properties, then rooting depth | `df_whc_hires_ilon_*.rds` and combined WHC objects |
+| `06_thresholds` | Diagnose SIF- and ET-based CWD thresholds | `data/df_cwd_lue0_2.rds`, `data/df_cwd_et0_3.rds` |
+| `07_return_periods` | Calculate, diagnose, and collect return periods | `data/df_rl_*.rds`, `data/df_rp_diag_*.rds` |
 | `08_site_analysis` | Run RSIP/SOFUN and FLUXNET site analyses | chunked forcing and SOFUN output under `data/` |
 | `09_diagnostics` | Check completeness and selected site results | file-availability and diagnostic objects |
 | `10_results` | Create bias analyses and publication figures | figures and final derived objects |
@@ -118,7 +118,7 @@ MCT_ILON=3961-3970,5000 Rscript analysis/04_cwd_extremes/01_fit_extremes.R
 Computational functions skip outputs that already exist. Consequently, the
 same command safely resumes an interrupted stage and its messages identify
 completed and missing longitude bands. The NetCDF conversion adapter also
-writes through a temporary file before exposing each completed `.RData` file.
+writes through a temporary file before exposing each completed `.rds` file.
 Remove or relocate only the exact corrupt output that should be regenerated;
 do not clear a whole checkpoint directory.
 
@@ -134,13 +134,19 @@ wrappers around `R/map_netcdf_to_tidy.R`. The adapter delegates NetCDF reading
 and longitude chunking to `map2tidy`, then restores the established downstream
 contract:
 
-- output basenames remain, for example, `EDAY_CERES__ilon_123.RData`;
-- every file still contains an object named `df`;
+- output basenames remain, for example, `EDAY_CERES__ilon_123.rds`;
+- every file serialises one data frame, assigned explicitly by readers;
 - the outer columns remain `lon`, `lat`, and nested `data`;
 - nested `datetime` is normalised to the existing `time` name.
 
 This isolates the generic conversion from source-specific variable and path
 configuration without changing analysis variable names.
+
+All active workflow checkpoints use the single-object `.rds` format through
+`saveRDS()` and `readRDS()`. Existing `.RData` checkpoints are not modified in
+place; regenerate them with the corresponding numbered work step before
+resuming the updated workflow. The archived legacy notebook retains its
+historical file references for provenance only.
 
 ## UBELIX
 

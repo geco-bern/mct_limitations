@@ -28,8 +28,8 @@ if (siteset=="global"){
   ##------------------------------------------------------------------------
   ## Extract point data and construct single nested time series data frame
   ##------------------------------------------------------------------------
-  filn <- paste0("data/df_alexi_", siteset,".Rdata")
-  filn_csv <- str_replace(filn, "RData", "csv")
+  filn <- paste0("data/df_alexi_", siteset,".rds")
+  filn_csv <- str_replace(filn, "[.]rds$", ".csv")
   if (!file.exists(filn)){
     if (!file.exists(filn_csv)){
       df_alexi <- get_data_mct_global(
@@ -37,7 +37,7 @@ if (siteset=="global"){
         dir_et   = "~/data/alexi_tir/netcdf/", fil_et_pattern = "EDAY_CERES_",
         get_watch = FALSE, get_landeval = FALSE, get_alexi = TRUE
       )
-      save(df_alexi, file = filn)
+      saveRDS(df_alexi, file = filn)
       df_alexi |>
         tidyr::unnest(df) |>
         write_csv(path = filn_csv)
@@ -49,7 +49,7 @@ if (siteset=="global"){
         dplyr::rename(df = data)
     }
   } else {
-    load(filn)
+    df_alexi <- readRDS(filn)
     df_alexi |>
       tidyr::unnest(df) |>
       write_csv(path = filn_csv)
@@ -59,8 +59,8 @@ if (siteset=="global"){
 ##------------------------------------------------------------------------
 ## WATCH
 ##------------------------------------------------------------------------
-filn <- paste0("data/df_watch_", siteset,".RData")
-filn_csv <- str_replace(filn, "RData", "csv")
+filn <- paste0("data/df_watch_", siteset,".rds")
+filn_csv <- str_replace(filn, "[.]rds$", ".csv")
 if (!file.exists(filn)){
   if (!file.exists(filn_csv)){
     df_watch <- get_data_mct_global(
@@ -71,7 +71,7 @@ if (!file.exists(filn)){
       get_watch = TRUE, get_landeval = FALSE, get_alexi = FALSE,
       year_start_watch = 2003, year_end_watch = 2018
     )
-    save(df_watch, file = filn)
+    saveRDS(df_watch, file = filn)
     df_watch |>
       tidyr::unnest(data) |>
       write_csv(path = filn_csv)
@@ -83,7 +83,7 @@ if (!file.exists(filn)){
       dplyr::rename(df = data)
   }
 } else {
-  load(filn)
+  df_watch <- readRDS(filn)
   df_watch |>
     tidyr::unnest(data) |>
     write_csv(path = filn_csv)

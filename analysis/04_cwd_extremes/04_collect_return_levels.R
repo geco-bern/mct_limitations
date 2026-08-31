@@ -17,6 +17,6 @@ df <- run_parallel(
   continue_on_error = FALSE
 ) %>% bind_rows()
 
-path <- "data/df_cwdx_10_20_40.RData"
-write_rdata_atomic(df, "df", path.expand(path))
+path <- "data/df_cwdx_10_20_40.rds"
+write_rds_atomic(df, path.expand(path))
 message("Wrote ", path)

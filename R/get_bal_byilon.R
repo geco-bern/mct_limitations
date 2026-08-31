@@ -3,7 +3,7 @@ get_bal_byilon <- function(ilon_hires){
   source("R/get_bal.R")
   
   dirn <- "data/df_bal/"
-  filn <- paste0("df_bal_ilon_", ilon_hires, ".RData")
+  filn <- paste0("df_bal_ilon_", ilon_hires, ".rds")
   if (!dir.exists(dirn)) system("mkdir -p data/df_bal")
   path_out <- paste0(dirn, filn)
 
@@ -16,18 +16,18 @@ get_bal_byilon <- function(ilon_hires){
     
     ## Open ET-mm file
     dirn <- "data/df_alexi_et_mm/"
-    filn <- paste0("df_alexi_et_mm_ilon_", ilon_hires, ".RData")
+    filn <- paste0("df_alexi_et_mm_ilon_", ilon_hires, ".rds")
     path_et_mm <- paste0(dirn, filn)
     
     ## open snow file of corresponding longitude slice
     dirn <- "data/df_snow/"
-    filn <- paste0("df_snow_ilon_", ilon_lores, ".RData")
+    filn <- paste0("df_snow_ilon_", ilon_lores, ".rds")
     path_snow <- paste0(dirn, filn)
     
     if (file.exists(path_et_mm) && file.exists(path_snow)){
      
-      load(path_et_mm) # loads 'df_alexi'
-      load(path_snow)  # loads 'df'
+      df_alexi <- readRDS(path_et_mm)
+      df <- readRDS(path_snow)
       df_watch <- df %>% 
         mutate(lon = round(lon, digits = 2), lat = round(lat, digits = 2)) # rename
       rm("df")
@@ -68,7 +68,7 @@ get_bal_byilon <- function(ilon_hires){
         ) 
       
       rlang::inform(paste("Writing file:", path_out))    
-      save(df, file = path_out)
+      saveRDS(df, file = path_out)
       
     } else {
       
