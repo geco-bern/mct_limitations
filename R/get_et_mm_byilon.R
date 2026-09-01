@@ -1,22 +1,14 @@
-get_et_mm_byilon <- function(ilon_hires,
-                             config = read_input_config(),
-                             resolution = c("high", "low")) {
-  resolution <- match.arg(resolution)
+get_et_mm_byilon <- function(ilon_hires, config = read_input_config()) {
   find_lat_lores <- function(lat_hires, vec_lat_lores) {
     vec_lat_lores[which.min(abs(lat_hires - vec_lat_lores))]
   }
 
   source("R/convert_et.R")
 
-  et_source <- if (resolution == "high") {
-    config$et$source
-  } else {
-    config$et$low_resolution_source
-  }
+  et_source <- config$et$source
   temperature_source <- config$temperature$source
-  output_directory <- if (resolution == "high") "df_et_mm" else "df_et_mm_lores"
   output <- climate_output_path(
-    paste0("data/", output_directory, "/df_et_mm_ilon_", ilon_hires, ".rds"),
+    paste0("data/df_et_mm/df_et_mm_ilon_", ilon_hires, ".rds"),
     config
   )
   ensure_directory(dirname(output))

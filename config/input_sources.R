@@ -36,28 +36,6 @@ list(
         latitude_step = 0.05,
         latitude_count = 3600L
       )
-    ),
-    low_resolution_source = list(
-      netcdf_dir = "~/data/alexi_tir/data_halfdeg",
-      netcdf_pattern = "^EDAY_CERES_.*[.]nc$",
-      recursive = FALSE,
-      tidy_dir = "~/data/alexi_tir/data_tidy_halfdeg",
-      tidy_prefix = "EDAY_CERES_",
-      variable = "et",
-      longitude_name = "lon",
-      latitude_name = "lat",
-      time_name = "time",
-      conversion = "latent_energy_to_mm",
-      scale = 1e6,
-      offset = 0,
-      grid = list(
-        longitude_start = -179.75,
-        longitude_step = 0.5,
-        longitude_count = 720L,
-        latitude_start = -89.75,
-        latitude_step = 0.5,
-        latitude_count = 360L
-      )
     )
   ),
 

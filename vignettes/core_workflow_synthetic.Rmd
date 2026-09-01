@@ -1,0 +1,276 @@
+---
+title: "From tidy climate inputs to annual CWD and surplus"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{From tidy climate inputs to annual CWD and surplus}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 4.5
+)
+
+project_root <- if (file.exists("R/simulate_snow.R")) {
+  "."
+} else {
+  ".."
+}
+
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(purrr)
+library(tibble)
+library(tidyr)
+
+source(file.path(project_root, "R", "convert_et.R"))
+source(file.path(project_root, "R", "simulate_snow.R"))
+source(file.path(project_root, "R", "calculate_annual_cwd.R"))
+```
+
+This vignette demonstrates the retained core workflow without requiring any
+external climate files. It starts with synthetic nested tidy tables that mimic
+one longitude-slice file written by the map2tidy adapter, then performs the
+same major transformations used for MSWEP precipitation, ERA5-Land
+temperature, and ALEXI evapotranspiration:
+
+1. join the nested daily climate inputs by grid cell and date;
+2. convert temperature and ET to the units used by the water-balance step;
+3. partition total precipitation into rain and snow and simulate snowmelt;
+4. calculate daily liquid-water input minus ET;
+5. calculate annual maximum CWD and match it with the latest preceding
+   cumulative-surplus maximum.
+
+No site data, soil properties, rooting-depth conversion, threshold analysis,
+or extreme-value distribution is involved.
+
+## Synthetic map2tidy-like inputs
+
+A real tidy checkpoint has one outer row per grid cell and a nested data
+column containing the daily time series. The three synthetic inputs below use
+the source variable names expected for MSWEP (precipitation), ERA5-Land
+(t2m, in kelvin), and ALEXI (et, in MJ m^-2^ d^-1^).
+
+```{r synthetic-inputs}
+set.seed(42)
+
+dates <- seq(as.Date("2003-01-01"), as.Date("2008-12-31"), by = "day")
+locations <- tibble(
+  lon = rep(7.05, 4),
+  lat = c(45.85, 45.95, 46.05, 46.15),
+  elv = c(250, 400, 550, 700),
+  cell = seq_len(4)
+)
+
+make_synthetic_cell <- function(lat, cell) {
+  n <- length(dates)
+  seasonal <- sin(2 * pi * (yday(dates) - 105) / 365.25)
+  temp_c <- 7.5 + 12.5 * seasonal - 0.35 * (lat - 46)
+  wet_probability <- pmax(
+    0.08,
+    0.30 - 0.16 * pmax(seasonal, 0) + 0.015 * (cell - 2)
+  )
+  precipitation <- ifelse(
+    runif(n) < wet_probability,
+    rgamma(n, shape = 1.6, scale = 4.2),
+    0
+  )
+  et_energy_mj <- pmax(
+    0.8,
+    4.2 + 4.5 * pmax(seasonal, -0.5) + 0.15 * cell
+  )
+
+  tibble(
+    time = dates,
+    precipitation = precipitation,
+    t2m = temp_c + 273.15,
+    et = et_energy_mj
+  )
+}
+
+synthetic_cells <- map2(locations$lat, locations$cell, make_synthetic_cell)
+
+precipitation_tidy <- locations |>
+  transmute(
+    lon,
+    lat,
+    data = map(synthetic_cells, ~select(.x, time, precipitation))
+  )
+temperature_tidy <- locations |>
+  transmute(
+    lon,
+    lat,
+    data = map(synthetic_cells, ~select(.x, time, t2m))
+  )
+et_tidy <- locations |>
+  transmute(
+    lon,
+    lat,
+    elv,
+    data = map(synthetic_cells, ~select(.x, time, et))
+  )
+
+precipitation_tidy
+precipitation_tidy$data[[1]] |> slice_head(n = 4)
+```
+
+## Join and transform the daily drivers
+
+The synthetic ERA5-Land values are converted from kelvin to degrees Celsius.
+The ALEXI-like daily energy is converted from MJ m^-2^ d^-1^ to J m^-2^ d^-1^
+and then to ET in mm d^-1^. MSWEP total precipitation is partitioned by the
+temperature threshold inside simulate_snow().
+
+```{r water-balance}
+drivers <- temperature_tidy |>
+  rename(data_temperature = data) |>
+  left_join(
+    precipitation_tidy |> rename(data_precipitation = data),
+    by = c("lon", "lat")
+  ) |>
+  left_join(
+    et_tidy |> rename(data_et = data),
+    by = c("lon", "lat")
+  ) |>
+  mutate(
+    data = pmap(
+      list(data_temperature, data_precipitation, data_et, elv),
+      function(temperature, precipitation, et, elevation) {
+        temperature |>
+          left_join(precipitation, by = "time") |>
+          left_join(et, by = "time") |>
+          mutate(
+            temp = t2m - 273.15,
+            et_mm = convert_et(
+              et * 1e6,
+              temp,
+              elevation
+            ),
+            prec = precipitation
+          ) |>
+          select(time, temp, prec, et_mm) |>
+          simulate_snow()
+      }
+    ),
+    balance = map(
+      data,
+      ~transmute(
+        .x,
+        time,
+        bal = liquid_to_soil - et_mm
+      )
+    )
+  ) |>
+  select(lon, lat, data, balance)
+
+drivers$balance[[1]] |> slice_head(n = 6)
+```
+
+The daily balance is positive when rain plus snowmelt exceeds ET and negative
+when atmospheric water loss exceeds liquid input to the soil.
+
+```{r daily-balance-plot}
+daily_example <- drivers$data[[1]] |>
+  select(time, liquid_to_soil, et_mm) |>
+  left_join(drivers$balance[[1]], by = "time")
+
+ggplot(daily_example, aes(time, bal)) +
+  geom_hline(yintercept = 0, color = "grey60") +
+  geom_line(linewidth = 0.25) +
+  labs(
+    x = NULL,
+    y = "Daily water balance (mm d-1)",
+    title = "Synthetic liquid input minus evapotranspiration"
+  ) +
+  theme_minimal()
+```
+
+## Annual maximum CWD and preceding surplus
+
+calculate_annual_cwd() adds the first-year spin-up, delegates the daily
+deficit and surplus calculations to cwd::cwd(do_surplus = TRUE), removes
+padding, and returns one annual table per grid cell.
+
+```{r annual-cwd}
+annual_output <- drivers |>
+  mutate(
+    cwd_result = map(
+      balance,
+      ~calculate_annual_cwd(
+        .x,
+        years = 2003:2008,
+        return_cumulative_surplus = FALSE
+      )
+    ),
+    annual_cwd = map(cwd_result, "annual_cwd"),
+    cwd_status = map_chr(cwd_result, "status")
+  ) |>
+  select(lon, lat, cwd_status, annual_cwd)
+
+annual_values <- annual_output |>
+  unnest(annual_cwd)
+
+annual_values
+```
+
+The two annual quantities can be viewed as time series for each grid cell.
+
+```{r annual-time-series}
+annual_long <- annual_values |>
+  select(lat, year, cwd_mm, preceding_surplus_mm) |>
+  pivot_longer(
+    c(cwd_mm, preceding_surplus_mm),
+    names_to = "quantity",
+    values_to = "mm"
+  )
+
+ggplot(
+  annual_long,
+  aes(year, mm, color = factor(lat), group = interaction(lat, quantity))
+) +
+  geom_line() +
+  geom_point(size = 1.2) +
+  facet_wrap(~quantity, scales = "free_y", ncol = 1) +
+  labs(
+    x = NULL,
+    y = "Water equivalent (mm)",
+    color = "Latitude"
+  ) +
+  theme_minimal()
+```
+
+The final results step retains only their relationship.
+
+```{r relationship}
+relationship <- annual_values |>
+  filter(
+    is.finite(cwd_mm),
+    is.finite(preceding_surplus_mm),
+    cwd_mm > 0,
+    preceding_surplus_mm > 0
+  )
+
+ggplot(
+  relationship,
+  aes(preceding_surplus_mm, cwd_mm, color = factor(lat))
+) +
+  geom_point(size = 2) +
+  geom_smooth(
+    aes(group = 1),
+    method = "lm",
+    formula = y ~ x,
+    color = "black",
+    se = FALSE
+  ) +
+  labs(
+    x = "Preceding maximum cumulative surplus (mm)",
+    y = "Annual maximum CWD (mm)",
+    color = "Latitude"
+  ) +
+  theme_minimal()
+```

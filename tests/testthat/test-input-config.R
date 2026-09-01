@@ -58,24 +58,14 @@ test_that("snow simulation inputs must share a grid", {
   expect_error(read_input_config(path), "must use the same grid")
 })
 
-test_that("separate precipitation requires a snowfall source", {
+test_that("the retained workflow requires total precipitation", {
   config <- dget(default_config_path)
   config$precipitation$form <- "separate"
   path <- tempfile(fileext = ".R")
   on.exit(unlink(path), add = TRUE)
   dput(config, path)
 
-  expect_error(read_input_config(path), "precipitation[$]snow")
-})
-
-test_that("precipitation form is validated", {
-  config <- dget(default_config_path)
-  config$precipitation$form <- "mixed"
-  path <- tempfile(fileext = ".R")
-  on.exit(unlink(path), add = TRUE)
-  dput(config, path)
-
-  expect_error(read_input_config(path), "either 'separate' or 'total'")
+  expect_error(read_input_config(path), "must be 'total'")
 })
 
 test_that("input identifiers are safe for filenames", {

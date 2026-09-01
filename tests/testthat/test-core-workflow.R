@@ -2,7 +2,7 @@ project_file <- function(...) {
   testthat::test_path("..", "..", ...)
 }
 
-test_that("the core registry ends in annual CWD", {
+test_that("the job registry contains only the retained global workflow", {
   jobs <- utils::read.delim(
     project_file("src", "ubelix", "jobs.tsv"),
     sep = "\t",
@@ -16,9 +16,21 @@ test_that("the core registry ends in annual CWD", {
   expect_equal(annual_job$stage, "04_annual_cwd")
   expect_match(annual_job$output_pattern, "data/df_cwd_annual/")
 
-  extreme_jobs <- jobs[grepl("extreme|return_levels", jobs$job), ]
-  expect_true(nrow(extreme_jobs) > 0L)
-  expect_true(all(extreme_jobs$stage == "04_optional_cwd_extremes"))
+  expect_setequal(
+    unique(jobs$stage),
+    c("01_tidy_inputs", "03_water_balance", "04_annual_cwd", "10_results")
+  )
+  expect_false(any(grepl(
+    "sif|fluxnet|sj02|soil|root|extreme|return|diagnostic",
+    paste(jobs$stage, jobs$job, jobs$script),
+    ignore.case = TRUE
+  )))
+  expect_true(all(file.exists(project_file(jobs$script))))
+  expect_false("prepare_snowfall" %in% jobs$job)
+
+  result_job <- jobs[jobs$job == "cwd_surplus_relationship", ]
+  expect_equal(nrow(result_job), 1L)
+  expect_equal(result_job$stage, "10_results")
 })
 
 test_that("the core submitter omits extreme-value fitting", {
@@ -28,8 +40,43 @@ test_that("the core submitter omits extreme-value fitting", {
   )
 
   expect_true(any(grepl("submit_job calculate_annual_cwd", pipeline, fixed = TRUE)))
+  expect_true(any(grepl("submit_job cwd_surplus_relationship", pipeline, fixed = TRUE)))
   expect_false(any(grepl("submit_job fit_extremes", pipeline, fixed = TRUE)))
   expect_false(any(grepl("submit_job extract_return_levels", pipeline, fixed = TRUE)))
+})
+
+test_that("only the retained workflow vignettes remain", {
+  vignette_files <- list.files(
+    project_file("vignettes"),
+    pattern = "[.]Rmd$",
+    recursive = TRUE
+  )
+
+  expect_setequal(
+    vignette_files,
+    c("core_workflow_synthetic.Rmd", "ubelix_workflow.Rmd")
+  )
+})
+
+test_that("R contains only helpers used by the retained workflow", {
+  retained <- c(
+    "calculate_annual_cwd.R",
+    "convert_et.R",
+    "get_annual_cwd_byilon.R",
+    "get_bal.R",
+    "get_bal_byilon.R",
+    "get_et_mm_byilon.R",
+    "input_config.R",
+    "map_netcdf_to_tidy.R",
+    "simulate_snow.R",
+    "simulate_snow_byilon.R",
+    "workflow_helpers.R"
+  )
+
+  expect_setequal(
+    list.files(project_file("R"), pattern = "[.]R$"),
+    retained
+  )
 })
 
 test_that("the annual adapter delegates daily calculations to cwd", {
@@ -37,15 +84,10 @@ test_that("the annual adapter delegates daily calculations to cwd", {
     project_file("R", "calculate_annual_cwd.R"),
     warn = FALSE
   )
-  wrapper <- readLines(
-    project_file("R", "get_annual_cwd_byilon.R"),
-    warn = FALSE
-  )
   description <- read.dcf(project_file("DESCRIPTION"))
 
   expect_true(any(grepl("cwd::cwd(", implementation, fixed = TRUE)))
   expect_false(any(grepl("calculate_cumulative_surplus <-", implementation)))
-  expect_false(any(grepl('source("R/mct2.R")', wrapper, fixed = TRUE)))
   expect_match(
     description[[1, "Imports"]],
     "(^|,|\\n)\\s*cwd\\s*(\\([^)]*\\))?(,|$)"

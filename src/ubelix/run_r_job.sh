@@ -17,7 +17,7 @@ project_root=${SLURM_SUBMIT_DIR:?Submit jobs from the project root}
 
 cd "$project_root"
 if [[ ! -f mct.Rproj ]]; then
-  echo "Submit this job from the mct project root." >&2
+  echo "Submit this job from the mct_limitations project root." >&2
   exit 2
 fi
 

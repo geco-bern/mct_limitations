@@ -13,4 +13,5 @@ logs/*
 
 # Rendered reports and exploratory output.
 vignettes/*.html
+vignettes/*_files/
 /whc_forcing_map.html

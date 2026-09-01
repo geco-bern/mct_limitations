@@ -1,0 +1,275 @@
+---
+title: "Running the CWD workflow on UBELIX"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Running the CWD workflow on UBELIX}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+This vignette describes how to run the complete global analysis on the UBELIX
+Slurm cluster. Commands are intended to be run from the top-level
+`mct_limitations` directory. The workflow uses daily MSWEP V3.16 Past total
+precipitation, ERA5-Land temperature, and ALEXI evapotranspiration under the
+default configuration.
+
+The submission helpers create Slurm arrays, request the resources recorded in
+`src/ubelix/jobs.tsv`, add the configured climate-source tag to job and output
+names, and retain completed longitude checkpoints when a job is restarted.
+
+## 1. Prepare the project and R environment
+
+Log in to UBELIX, enter the project checkout, and confirm that the project file
+is present. Always submit from this directory because Slurm records it as the
+job's working directory.
+
+```{bash}
+cd /path/to/mct_limitations
+test -f mct.Rproj
+git status --short
+```
+
+Load R and install the dependencies once into an R library available on the
+compute nodes. The `remotes` installer reads `DESCRIPTION`, including the
+GitHub packages listed under `Remotes`.
+
+```{bash}
+module load R
+Rscript -e 'if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes", repos = "https://cloud.r-project.org")'
+Rscript -e 'remotes::install_deps(dependencies = TRUE)'
+```
+
+If packages are centrally managed or already installed, only verify that the
+project loads the key dependencies.
+
+```{bash}
+Rscript -e 'library(cwd); library(map2tidy); library(rbeni)'
+```
+
+## 2. Configure and verify the climate inputs
+
+Review `config/input_sources.R` before submitting. In particular, verify the
+analysis years, NetCDF directories and filename patterns, variable and
+coordinate names, source grids, and the elevation file. Paths beginning with
+`~` are expanded on the compute node and must therefore resolve there.
+
+The default run identifier can be printed without starting a calculation.
+
+```{bash}
+Rscript -e 'source("R/input_config.R"); config <- read_input_config(); cat(climate_run_id(config), "\n")'
+```
+
+For a different namelist, export `MCT_INPUT_CONFIG` before every status or
+submission command. Slurm exports this variable to the compute jobs.
+
+```{bash}
+export MCT_INPUT_CONFIG=config/input_sources_alternative.R
+Rscript -e 'source("R/input_config.R"); config <- read_input_config(); cat(climate_run_id(config), "\n")'
+```
+
+Run the status report before submission. A new run should mostly report zero
+outputs; an interrupted or completed run will show the tagged checkpoints that
+already exist.
+
+```{bash}
+Rscript analysis/00_status.R
+```
+
+## 3. Workflow jobs and dependencies
+
+The retained workflow consists of these jobs:
+
+| Order | Job name | Requires | Main purpose |
+|---:|---|---|---|
+| 1 | `prepare_precipitation` | MSWEP NetCDF files | Create tidy precipitation longitude slices |
+| 1 | `prepare_temperature` | ERA5-Land NetCDF files | Create tidy temperature longitude slices |
+| 1 | `prepare_et` | ALEXI NetCDF files | Create tidy ET longitude slices |
+| 2 | `convert_et_mm` | tidy ET and temperature | Convert ALEXI latent energy to daily ET in mm |
+| 2 | `simulate_snow` | tidy precipitation and temperature | Partition rain and snow, maintain snow storage, and calculate melt |
+| 3 | `calculate_balance` | converted ET and liquid input | Calculate daily rain plus snowmelt minus ET |
+| 4 | `calculate_annual_cwd` | daily balance | Store annual maximum CWD and preceding surplus by grid cell |
+| 5 | `cwd_surplus_relationship` | all annual slices | Store and plot the CWD-surplus relationship |
+
+The first three jobs are independent. `convert_et_mm` and `simulate_snow` can
+then run in parallel. All later jobs are sequential.
+
+The registry can be inspected directly; its resource columns control array
+size, concurrency, CPUs, memory, and wall time.
+
+```{bash}
+column -t -s $'\t' src/ubelix/jobs.tsv
+```
+
+## 4. Submit the whole workflow
+
+The simplest option submits every job, including the final result, with Slurm
+`afterok` dependencies:
+
+```{bash}
+src/ubelix/submit_pipeline.sh
+```
+
+The script submits the three input arrays first. It then builds the dependency
+graph shown above. A downstream job becomes eligible only after every required
+upstream job or array has completed successfully.
+
+Set cluster-specific controls on the same command when needed. The account
+defaults to `gratis`; no partition is requested by default.
+
+```{bash}
+MCT_SLURM_ACCOUNT=my_account \
+MCT_SLURM_PARTITION=your_partition \
+src/ubelix/submit_pipeline.sh
+```
+
+If the data paths use an allocated UBELIX Workspace and its environment must be
+loaded inside each batch job, add:
+
+```{bash}
+MCT_USE_WORKSPACE=1 src/ubelix/submit_pipeline.sh
+```
+
+Environment controls can be combined. Export them first when that is easier to
+read or when several commands must use the same settings.
+
+## 5. Submit individual work steps
+
+An individual job is submitted by its registry name:
+
+```{bash}
+src/ubelix/submit.sh prepare_precipitation
+```
+
+To run the workflow checkpoint by checkpoint, submit the independent inputs,
+wait until all three have completed successfully, and inspect the status.
+
+```{bash}
+src/ubelix/submit.sh prepare_precipitation
+src/ubelix/submit.sh prepare_temperature
+src/ubelix/submit.sh prepare_et
+
+Rscript analysis/00_status.R
+```
+
+Next submit ET conversion and snow simulation. These jobs can run concurrently,
+but both must finish before the daily balance is submitted.
+
+```{bash}
+src/ubelix/submit.sh convert_et_mm
+src/ubelix/submit.sh simulate_snow
+
+src/ubelix/submit.sh calculate_balance
+src/ubelix/submit.sh calculate_annual_cwd
+src/ubelix/submit.sh cwd_surplus_relationship
+```
+
+When using this manual sequence, wait for each dependency wave to finish before
+submitting the next one. The submitter does not infer dependencies for a single
+job invocation.
+
+An explicit dependency can instead be attached to any individual submission.
+For example, after recording the Slurm job ID returned for the annual CWD job:
+
+```{bash}
+MCT_DEPENDENCY=afterok:123456 \
+src/ubelix/submit.sh cwd_surplus_relationship
+```
+
+The final result job can be rerun independently once all annual files exist.
+Use `MCT_RESULTS_PER_SLICE` to change the deterministic maximum sample drawn
+from each longitude-slice file; the default is 25.
+
+```{bash}
+MCT_RESULTS_PER_SLICE=100 \
+src/ubelix/submit.sh cwd_surplus_relationship
+```
+
+## 6. Monitor jobs and outputs
+
+Use standard Slurm tools to monitor the submitted jobs. The generated job names
+start with `mct_` and include the climate run identifier.
+
+```{bash}
+squeue --me
+sacct -j JOB_ID --format=JobID,JobName%60,State,Elapsed,MaxRSS,ExitCode
+```
+
+Standard output and errors are written under `logs/ubelix/`. `%A` in the
+submission template becomes the Slurm job ID and `%a` becomes the array task
+ID.
+
+```{bash}
+ls -lt logs/ubelix
+tail -f logs/ubelix/calculate_annual_cwd__*.out
+tail -f logs/ubelix/calculate_annual_cwd__*.err
+```
+
+Re-run the project status report at any time to compare the number of completed
+files with the expected number in the registry.
+
+```{bash}
+module load R
+Rscript analysis/00_status.R
+```
+
+The main tagged checkpoints are:
+
+- configured tidy-cache directories for precipitation, temperature, and ET;
+- `data/df_et_mm/df_et_mm_ilon_*.rds`;
+- `data/df_snow/df_snow_ilon_*.rds`;
+- `data/df_bal/df_bal_ilon_*.rds`;
+- `data/df_cwd_annual/df_cwd_annual_ilon_*.rds`;
+- `data/cwd_surplus_relationship_sample.rds`;
+- `fig/cwd_vs_preceding_surplus.png` and `.pdf`.
+
+Each filename receives the climate run tag, for example
+`et-alexi__prec-mswep-v3.16-past__temp-era5-land`, before its extension.
+
+## 7. Restart incomplete work
+
+Longitude-level outputs are written atomically. Existing completed files are
+skipped, so the usual recovery procedure is to fix the source of an error and
+resubmit the same job:
+
+```{bash}
+src/ubelix/submit.sh calculate_annual_cwd
+```
+
+Successful longitude files remain in place while missing files are generated.
+Do not remove successful checkpoints merely to restart a failed array.
+
+For a targeted recovery, `MCT_ILON` accepts comma-separated indices and closed
+ranges. It is exported to every task in the submitted array; tasks without an
+assigned selected longitude exit without producing output.
+
+```{bash}
+MCT_ILON=3961-3970,5000 \
+src/ubelix/submit.sh calculate_annual_cwd
+```
+
+Apply the same longitude selection to an upstream step first if its required
+checkpoint is also missing. Run `analysis/00_status.R` after recovery before
+submitting downstream work.
+
+## 8. Interpret dependency failures
+
+With a full-pipeline submission, an upstream failure prevents dependent jobs
+from running. Inspect the failed task's `.err` and `.out` files and its `sacct`
+record. After correcting the problem, resubmit the failed stage and then either
+submit the remaining stages individually or submit the full workflow again.
+Because completed checkpoints are skipped, full resubmission is safe and does
+not repeat completed longitude calculations.
+
+The core endpoint is the nested annual data frame produced for every grid cell.
+It contains annual maximum CWD and its preceding maximum cumulative surplus.
+No extreme-value fitting, return-level analysis, site evaluation, soil or
+rooting-depth calculation, or SIF/evaporative-fraction threshold analysis is
+submitted by this workflow.

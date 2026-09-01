@@ -23,24 +23,14 @@ source_output_pattern <- function(source) {
   )
 }
 
-snow_output_pattern <- if (identical(config$precipitation$form, "separate")) {
-  source_output_pattern(config$precipitation$snow)
-} else {
-  "-"
-}
-
 source_patterns <- c(
   "@precipitation_tidy" = source_output_pattern(config$precipitation$rain),
-  "@snow_tidy" = snow_output_pattern,
   "@temperature_tidy" = source_output_pattern(config$temperature$source),
-  "@et_tidy" = source_output_pattern(config$et$source),
-  "@et_lores_tidy" = source_output_pattern(config$et$low_resolution_source)
+  "@et_tidy" = source_output_pattern(config$et$source)
 )
 
 run_specific_stages <- c(
-  "01_tidy_inputs", "03_water_balance", "04_annual_cwd",
-  "04_optional_cwd_extremes",
-  "06_thresholds", "07_return_periods", "09_diagnostics"
+  "01_tidy_inputs", "03_water_balance", "04_annual_cwd", "10_results"
 )
 
 resolve_output_pattern <- function(pattern, stage) {
@@ -66,21 +56,13 @@ jobs$output_pattern <- mapply(
 )
 
 hires_count <- config$et$source$grid$longitude_count
-lores_count <- config$et$low_resolution_source$grid$longitude_count
 forcing_count <- config$precipitation$rain$grid$longitude_count
 jobs$expected_outputs[jobs$job %in% c(
-  "prepare_et", "sif_jj", "sif_pk", "glass", "convert_et_mm",
-  "calculate_balance", "calculate_annual_cwd", "fit_extremes", "extract_return_levels",
-  "redo_failed", "calculate_sif_thresholds", "calculate_et_thresholds"
+  "prepare_et", "convert_et_mm", "calculate_balance", "calculate_annual_cwd"
 )] <- hires_count
 jobs$expected_outputs[jobs$job %in% c(
-  "prepare_precipitation", "prepare_snowfall", "prepare_temperature",
-  "simulate_snow"
+  "prepare_precipitation", "prepare_temperature", "simulate_snow"
 )] <- forcing_count
-jobs$expected_outputs[jobs$job %in% c(
-  "prepare_et_lores", "sif_jj_lores", "sif_pk_lores",
-  "calculate_balance_lores", "fit_extremes_lores"
-)] <- lores_count
 
 count_outputs <- function(pattern) {
   if (!nzchar(pattern) || pattern == "-") return(NA_integer_)
@@ -96,12 +78,6 @@ jobs$status <- ifelse(
   ifelse(jobs$outputs_found > 0L, "started", "not started"),
   ifelse(jobs$outputs_found >= jobs$expected_outputs, "complete", "incomplete")
 )
-if (identical(config$precipitation$form, "total")) {
-  jobs$outputs_found[jobs$job == "prepare_snowfall"] <- 0L
-  jobs$expected_outputs[jobs$job == "prepare_snowfall"] <- 0L
-  jobs$status[jobs$job == "prepare_snowfall"] <- "not applicable"
-}
-
 print(
   jobs[c("stage", "job", "outputs_found", "expected_outputs", "status")],
   row.names = FALSE

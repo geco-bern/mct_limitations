@@ -1,14 +1,8 @@
 simulate_snow_byilon <- function(ilon, config = read_input_config()) {
-  source("R/simulate_snow2.R")
+  source("R/simulate_snow.R")
 
   temperature_source <- config$temperature$source
   rain_source <- config$precipitation$rain
-  precipitation_form <- config$precipitation$form
-  snow_source <- if (identical(precipitation_form, "separate")) {
-    config$precipitation$snow
-  } else {
-    NULL
-  }
   output <- climate_output_path(
     paste0("data/df_snow/df_snow_ilon_", ilon, ".rds"),
     config
@@ -24,19 +18,12 @@ simulate_snow_byilon <- function(ilon, config = read_input_config()) {
     source_tidy_path(temperature_source, ilon, config),
     source_tidy_path(rain_source, ilon, config)
   )
-  if (!is.null(snow_source)) {
-    input_paths <- c(input_paths, source_tidy_path(snow_source, ilon, config))
-  }
   require_files(input_paths, "snow simulation")
 
   df <- readRDS(input_paths[[1]]) # loads 'df'
   df_temp <- df
   df <- readRDS(input_paths[[2]]) # loads 'df'
   df_prec <- df
-  if (!is.null(snow_source)) {
-    df <- readRDS(input_paths[[3]]) # loads 'df'
-    df_snow <- df
-  }
   rm("df")
 
   within_period <- function(data) {
@@ -71,49 +58,19 @@ simulate_snow_byilon <- function(ilon, config = read_input_config()) {
       )
     )
 
-  if (!is.null(snow_source)) {
-    df_snow <- df_snow %>%
-      ungroup() %>%
-      mutate(
-        data = purrr::map(data, within_period),
-        data = purrr::map(
-          data,
-          ~.x %>%
-            dplyr::rename(snow = tidyselect::all_of(snow_source$variable)) %>%
-            dplyr::mutate(snow = transform_input_values(snow, snow_source))
-        )
-      )
-  }
-
   df <- df_temp %>%
     left_join(df_prec %>% rename(data_prec = data), by = c("lon", "lat")) %>%
     mutate(data = purrr::map2(data, data_prec, ~left_join(.x, .y, by = "time"))) %>%
     dplyr::select(-data_prec)
 
-  if (!is.null(snow_source)) {
-    df <- df %>%
-      left_join(df_snow %>% rename(data_snow = data), by = c("lon", "lat")) %>%
-      mutate(data = purrr::map2(data, data_snow, ~left_join(.x, .y, by = "time"))) %>%
-      dplyr::select(-data_snow)
-  }
-
-  selected_variables <- if (identical(precipitation_form, "total")) {
-    c("time", "temp", "prec")
-  } else {
-    c("time", "temp", "prec", "snow")
-  }
-
   df <- df %>%
     mutate(
       data = purrr::map(
         data,
-        ~dplyr::select(.x, tidyselect::all_of(selected_variables))
+        ~dplyr::select(.x, time, temp, prec)
       ),
       data = purrr::map(data, ~tidyr::drop_na(.x, time)),
-      data = purrr::map(
-        data,
-        ~simulate_snow(.x, precipitation_form = precipitation_form)
-      )
+      data = purrr::map(data, simulate_snow)
     )
 
   message("Writing file: ", output)

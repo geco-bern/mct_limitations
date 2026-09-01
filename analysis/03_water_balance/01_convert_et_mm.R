@@ -7,7 +7,7 @@ library(magrittr)
 
 source("R/workflow_helpers.R")
 source("R/input_config.R")
-source("R/get_et_mm_bylon.R")
+source("R/get_et_mm_byilon.R")
 
 args <- chunk_arguments()
 config <- read_input_config()

@@ -1,59 +1,38 @@
 Type: Project
 Package: mct
-Title: Global Root-Zone Water Storage Analysis
+Title: Global Cumulative Water Deficit and Surplus Analysis
 Version: 1.0.0
 Authors@R: person("Benjamin", "Stocker", role = "aut")
-Description: Reproducible analysis workflow for global patterns of water
-    storage in vegetation rooting zones using the Mass Curve Technique.
+Description: Reproducible global gridded workflow for annual maximum
+    cumulative water deficit and preceding maximum cumulative water surplus.
 License: GPL-3
 Encoding: UTF-8
 Depends:
     R (>= 4.1)
 Imports:
-    broom,
-    caret,
-    cowplot,
     cwd (>= 3.0.1),
     dplyr,
-    extRemes,
-    forcats,
     ggplot2,
-    ggrepel,
-    ggridges,
     here,
-    ingestr,
     lubridate,
     magrittr,
     map2tidy,
     ncdf4,
     parallelly,
-    patchwork,
-    pdp,
     purrr,
-    ranger,
-    raster,
-    rasterVis,
-    readr,
-    recipes,
     rlang,
     rbeni,
-    rsofun,
-    segmented,
-    sf,
-    stringr,
-    terra,
     tibble,
-    tidyr,
-    tidyverse,
-    vip
+    tidyselect,
+    tidyr
 Suggests:
     knitr,
     renv,
+    rmarkdown,
     testthat (>= 3.0.0)
 Remotes:
     geco-bern/cwd,
     geco-bern/map2tidy,
-    geco-bern/rbeni,
-    geco-bern/ingestr,
-    geco-bern/rsofun
+    geco-bern/rbeni
+VignetteBuilder: knitr
 Config/testthat/edition: 3

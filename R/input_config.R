@@ -88,26 +88,17 @@ read_input_config <- function(path = input_config_path()) {
   )
 
   precipitation_form <- config$precipitation$form
-  if (is.null(precipitation_form)) precipitation_form <- "separate"
   if (!is.character(precipitation_form) || length(precipitation_form) != 1L ||
-      !precipitation_form %in% c("separate", "total")) {
+      !identical(precipitation_form, "total")) {
     stop(
-      "precipitation$form must be either 'separate' or 'total'.",
+      "precipitation$form must be 'total' in the retained workflow.",
       call. = FALSE
     )
   }
   config$precipitation$form <- precipitation_form
 
   validate_source_config(config$et$source, "et$source", require_conversion = TRUE)
-  validate_source_config(
-    config$et$low_resolution_source,
-    "et$low_resolution_source",
-    require_conversion = TRUE
-  )
-  et_conversions <- c(
-    config$et$source$conversion,
-    config$et$low_resolution_source$conversion
-  )
+  et_conversions <- config$et$source$conversion
   unsupported_conversions <- setdiff(
     et_conversions,
     c("latent_energy_to_mm", "identity_mm_day")
@@ -120,17 +111,7 @@ read_input_config <- function(path = input_config_path()) {
     )
   }
   validate_source_config(config$precipitation$rain, "precipitation$rain")
-  if (identical(config$precipitation$form, "separate")) {
-    validate_source_config(config$precipitation$snow, "precipitation$snow")
-  }
   validate_source_config(config$temperature$source, "temperature$source")
-  if (identical(config$precipitation$form, "separate") &&
-      !same_grid(config$precipitation$rain, config$precipitation$snow)) {
-    stop(
-      "precipitation$rain and precipitation$snow must use the same grid.",
-      call. = FALSE
-    )
-  }
   if (!same_grid(config$precipitation$rain, config$temperature$source)) {
     stop(
       "precipitation$rain and temperature$source must use the same grid.",
