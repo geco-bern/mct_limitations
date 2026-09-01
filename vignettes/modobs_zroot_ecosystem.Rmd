@@ -145,7 +145,7 @@ df_obs %>%
 
 Dividing simulated rooting depth by 10!
 ```{r}
-df_20y_bl_v3 <- readRDS("./data/df_20y_bl_v3.rds")
+load("./data/df_20y_bl_v3.Rdata") # loading df_20y_bl_v3
 df_20y_bl_v3 %>% 
   mutate(tropical = ifelse(abs(lat)<30, TRUE, FALSE )) %>% 
   ggplot(aes(x = abs(lat), y = -log(zroot/10), color = tropical)) +
@@ -482,10 +482,10 @@ ggsave("fig/boxplot_zroot_biomes.pdf", width = 12, height = 12)
 
 ```{r}
 # Look at distribution of global values and values in dataset.
-# df_20y_sr_v2 <- readRDS("./data/df_20y_sr_v2.rds")
-# df_20y_bl_v2 <- readRDS("./data/df_20y_bl_v2.rds")
-df_20y_sr_v3 <- readRDS("./data/df_20y_sr_v3.rds")
-df_20y_bl_v3 <- readRDS("./data/df_20y_bl_v3.rds")
+# load("./data/df_20y_sr_v2.Rdata")
+# load("./data/df_20y_bl_v2.Rdata")
+load("./data/df_20y_sr_v3.Rdata")
+load("./data/df_20y_bl_v3.Rdata")
 
 df_tmp <- df_20y_sr_v3 %>% 
   dplyr::select(lon, lat, zroot_sr = zroot) %>% 
@@ -658,7 +658,7 @@ df_anders <- nc_to_df(
   dplyr::filter(value) %>%
   dplyr::select(-value)
 
-saveRDS(df_anders, file = "data/df_anders.rds")
+save(df_anders, file = "data/df_anders.Rdata")
 
 df_tmp <- df_tmp %>%
   left_join(df_anders, by=c("lon", "lat"))

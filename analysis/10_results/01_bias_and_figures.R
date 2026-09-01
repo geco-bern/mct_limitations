@@ -43,10 +43,10 @@ df_wtd <- nc_to_df("~/data/watertable_fan13sci/Africa_model_wtd_v2_0.05deg_CLEAN
       drop_na()
     )
 
-saveRDS(df_wtd, file = "data/df_wtd.rds")
+save(df_wtd, file = "data/df_wtd.RData")
 
-df_corr <- readRDS("data/df_corr.rds")
-df_wtd <- readRDS("data/df_wtd.rds")
+load("data/df_corr.RData")
+load("data/df_wtd.RData")
 
 # nc_vegtype <- read_nc_onefile("~/data/landcover/modis_landcover__LPDAAC__v5.1__0.05deg__2010.nc", varnam = "landcover")
 
@@ -90,14 +90,14 @@ df_pred <- df_corr |>
     by = c("lon", "lat")
   )
 
-saveRDS(df_pred, file = "data/df_pred.rds")
+save(df_pred, file = "data/df_pred.RData")  
 
 df_pred |> 
   mutate(cwd_lue0_SIF = remove_outliers(cwd_lue0_SIF, coef = 10)) |> 
   ggplot(aes(x = cwd_lue0_SIF, y = ..count..)) +
   geom_histogram()
 
-df_pred <- readRDS("data/df_pred.rds")
+load("data/df_pred.RData")
 
 df_pred <- df_pred |> 
   mutate(cwd_lue0_SIF = remove_outliers(cwd_lue0_SIF, coef = 10)) |> 
@@ -133,7 +133,7 @@ df_pred |>
 library(recipes)
 library(caret)
 
-df_pred <- readRDS("data/df_pred.rds")
+load("data/df_pred.RData")
 
 df_sub <- df_pred |> 
   
@@ -178,7 +178,7 @@ modl <- train(myrecipe,
               trControl = traincotrlParams
               )
 
-saveRDS(modl, file = "data/modl_lm_allvars.rds")
+save(modl, file = "data/modl_lm_allvars.RData")
 
 df_sub$.pred1 <- predict(linmod1, newdata = df_sub)
 df_sub$.pred2 <- predict(linmod2, newdata = df_sub)
@@ -201,7 +201,7 @@ ggsave("fig/corr_FULL.png", width = 6, height = 5)
 library(caret)
 library(recipes)
 
-df_pred <- readRDS("data/df_pred.rds")
+load("data/df_pred.RData")
 
 df_sub <- df_pred |> 
   mutate(aai = ifelse(is.na(aai), 0, aai)) |> 
@@ -250,7 +250,7 @@ modl <- train(myrecipe,
 
 modl
 
-saveRDS(modl, file = "data/modl_rf_allvars_casia.rds")
+save(modl, file = "data/modl_rf_allvars_casia.RData")
 
 df_test$.pred <- predict(modl, newdata = df_test)
 
@@ -263,10 +263,10 @@ df_pd_aai <- partial(modl, pred.var = "aai")
 df_pd_wtd <- partial(modl, pred.var = "wtd")
 df_pd_forest <- partial(modl, pred.var = "forest")
 
-saveRDS(df_pd_gti, file = "data/df_pd_gti.rds")
-saveRDS(df_pd_aai, file = "data/df_pd_aai.rds")
-saveRDS(df_pd_wtd, file = "data/df_pd_wtd.rds")
-saveRDS(df_pd_forest, file = "data/df_pd_forest.rds")
+save(df_pd_gti, file = "data/df_pd_gti.RData")
+save(df_pd_aai, file = "data/df_pd_aai.RData")
+save(df_pd_wtd, file = "data/df_pd_wtd.RData")
+save(df_pd_forest, file = "data/df_pd_forest.RData")
 
 df_pd_gti |> 
   ggplot(aes(gti, yhat)) +
@@ -357,9 +357,9 @@ df_gti <- nc_to_df("~/data/gti_marthews/ga2_casia_05deg.nc", varnam = "Band1") |
 df_gti |> 
   analyse_modobs2("gti", "bias_20", type = "hex")
 
-saveRDS(df_gti, file = "data/df_gti.rds")
+save(df_gti, file = "data/df_gti.RData")
 
-df_corr <- readRDS("data/df_corr.rds")
+load("data/df_corr.RData")
 
 ## 80 year return period
 out <- df_corr |> 
@@ -401,7 +401,7 @@ plot_grid(gg80_sif, gg80_ef, ncol = 2, labels = c('a', 'b'))
 ggsave("fig/corr_cwd_lue0_fet_sif_cwdx80.pdf", width = 12, height = 5)
 ggsave("fig/corr_cwd_lue0_fet_sif_cwdx80.png", width = 12, height = 5)
 
-df_corr <- readRDS("data/df_corr.rds")
+load("data/df_corr.RData")
 
 df_corr_biome <- df_corr |> 
   dplyr::filter(biome_name != "Mangroves") |> 
@@ -488,21 +488,21 @@ gg_ef_90 <- out$gg + labs(title = "90% quantile by biome",
               x = expression(italic(S)[CWDX80] ~ " (mm)"),
               y = expression(italic(S)[dEF] ~ " (mm)"))
 
-saveRDS(gg_sif_50, file = "data/gg_sif_50.rds")
-saveRDS(gg_ef_50, file = "data/gg_ef_50.rds")
+save(gg_sif_50, file = "data/gg_sif_50.RData")
+save(gg_ef_50, file = "data/gg_ef_50.RData")
 
 library(patchwork)
-gg_rsip_10 <- readRDS("data/gg_rsip_10.rds")
-gg_rsip_25 <- readRDS("data/gg_rsip_25.rds")
-gg_rsip_50 <- readRDS("data/gg_rsip_50.rds")
-gg_rsip_75 <- readRDS("data/gg_rsip_75.rds")
-gg_rsip_90 <- readRDS("data/gg_rsip_90.rds")
+load("data/80.RData")
+load("data/gg_rsip_25.RData")
+load("data/gg_rsip_50.RData")
+load("data/gg_rsip_75.RData")
+load("data/gg_rsip_90.RData")
 
-gg_sj02_10 <- readRDS("data/gg_sj02_10.rds")
-gg_sj02_25 <- readRDS("data/gg_sj02_25.rds")
-gg_sj02_50 <- readRDS("data/gg_sj02_50.rds")
-gg_sj02_75 <- readRDS("data/gg_sj02_75.rds")
-gg_sj02_90 <- readRDS("data/gg_sj02_90.rds")
+load("data/gg_sj02_10.RData")
+load("data/gg_sj02_25.RData")
+load("data/gg_sj02_50.RData")
+load("data/gg_sj02_75.RData")
+load("data/gg_sj02_90.RData")
 
 (gg_sj02_10 + gg_sj02_50 + gg_sj02_90) /
   (gg_rsip_10 + gg_rsip_50 + gg_rsip_90) /
@@ -514,7 +514,7 @@ gg_sj02_90 <- readRDS("data/gg_sj02_90.rds")
 ggsave("fig/modobs_quantiles_biome.pdf", width = 15, height = 15)
 ggsave("fig/modobs_quantiles_biome.png", width = 15, height = 15)
 
-df_corr <- readRDS("data/df_corr.rds")
+load("data/df_corr.RData")
 
 df_corr |> 
   dplyr::select(biome_name, obs = cwd_lue0_SIF, mod = cwdx40) |>
@@ -612,17 +612,17 @@ saveRDS(dfs, file = "data/sample_checks_fluxnet2015sites.rds")
 ## One plot can then be shown as
 dfs$data[[1]]$out_lue0_fet[[1]]$gg + labs(subtitle = dfs$siteinfo[[1]]$sitename)
 
-gg_fig1a <- readRDS("data/gg_fig1a.rds")
-gg_fig1c <- readRDS("data/gg_fig1c.rds")
-gg_fig1b <- readRDS("data/gg_fig1b.rds")
+load("data/gg_fig1a.Rdata")
+load("data/gg_fig1c.Rdata")
+load("data/gg_fig1b.Rdata")
 
 plot_grid(gg_fig1a, gg_fig1b, gg_fig1_legend, ncol = 1, labels = c('a', 'b', ''), rel_heights = c(1,1,0.2))
 ggsave("fig/fig1.png", width = 8, height = 8)
 ggsave("fig/fig1.pdf", width = 8, height = 8)
 
 # Fig. 5
-gg_fig4a <- readRDS("data/gg_fig5a.rds")
-gg_fig4b <- readRDS("data/gg_fig5b.rds")
+load("data/gg_fig5a.Rdata")
+load("data/gg_fig5b.Rdata")
 bottom_row <- plot_grid(gg_fig5c, gg_fig5d, ncol = 2, labels = c('c', 'd'))
 plot_grid(gg_fig4a, gg_fig4b, gg_fig4_legend, bottom_row, ncol = 1, labels = c('a', 'b', ''), rel_heights = c(1,1,0.25,0.7))
 ggsave("fig/fig_return_period.pdf", width = 8, height = 11)

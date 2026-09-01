@@ -15,11 +15,15 @@ df <- run_parallel(
   continue_on_error = FALSE
 ) %>% bind_rows()
 
-path <- "data/df_cwd_et0_3.rds"
-write_rds_atomic(df, path.expand(path))
+path <- "data/df_cwd_et0_3.RData"
+write_rdata_atomic(df, "df", path.expand(path))
 
 vec_lon_avl <- round(unique(df$lon), digits = 3)
 vec_lon_hires <- round(seq(-179.975, 179.975, by = 0.05), digits = 3)
 vec_lon_missing <- vec_lon_hires[!(vec_lon_hires %in% vec_lon_avl)]
 vec_ilon_missing <- (vec_lon_missing + 179.975) / 0.05 + 1
-write_rds_atomic(vec_ilon_missing, "data/vec_ilon_missing.rds")
+write_rdata_atomic(
+  vec_ilon_missing,
+  "vec_ilon_missing",
+  "data/vec_ilon_missing.RData"
+)

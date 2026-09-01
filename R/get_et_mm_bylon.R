@@ -12,7 +12,7 @@ get_et_mm_byilon <- function(ilon_hires){
   
   ## determine file name
   dirn <- "data/df_alexi_et_mm/"
-  filn <- paste0("df_alexi_et_mm_ilon_", ilon_hires, ".rds")
+  filn <- paste0("df_alexi_et_mm_ilon_", ilon_hires, ".RData")
   if (!dir.exists(dirn)) system("mkdir -p data/df_alexi_et_mm")
   path <- paste0(dirn, filn)
   
@@ -24,13 +24,13 @@ get_et_mm_byilon <- function(ilon_hires){
     ilon_lores <- which.min(abs(lon_lores - lon_hires[ilon_hires]))
     
     ## Open files (ET from ALEXI-TIR)
-    df <- readRDS(paste0("~/data/alexi_tir/data_tidy/EDAY_CERES__ilon_", ilon_hires, ".rds"))
+    load(paste0("~/data/alexi_tir/data_tidy/EDAY_CERES__ilon_", ilon_hires, ".RData"))
     df_alexi <- df %>% 
       mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3))
     rm("df")
     
     ## and WATCH-WFDEI temperature data of corresponding longitude slice
-    df <- readRDS(paste0("~/data/watch_wfdei/data_tidy/Tair_daily_WFDEI__ilon_", ilon_lores, ".rds"))
+    load(paste0("~/data/watch_wfdei/data_tidy/Tair_daily_WFDEI__ilon_", ilon_lores, ".RData"))
     df_watch <- df %>% 
       mutate(lon = round(lon, digits = 2), lat = round(lat, digits = 2))
     rm("df")
@@ -85,7 +85,7 @@ get_et_mm_byilon <- function(ilon_hires){
       dplyr::select(-data_et_mm)
     
     print(paste("Writing file", path))
-    saveRDS(df_alexi, file = path)
+    save(df_alexi, file = path)
     
   } else {
     print(paste("File exists already: ", path))

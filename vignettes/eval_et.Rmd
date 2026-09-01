@@ -26,7 +26,7 @@ df_flue <- read_csv("~/data/fLUE/flue_stocker18nphyt.csv")
 fAPAR really doesn't go to zero in drought-affected regions. This has caused an overestimation of GPP in respective sites as identified in an earlier analysis. Therefore, we correct fAPAR data
 ```{r  message=FALSE, warning=FALSE}
 ## run vignette 'splash_fluxnet2015.Rmd' in rsofun repo
-obs_eval <- readRDS("data/obs_eval_v2.rds")
+load("data/obs_eval_v2.RData")
 df_flue_dry <- df_flue %>% filter(cluster %in% c("cGR", "cDD"))
 ddf_obs_dry <- obs_eval$ddf %>% 
   filter(sitename %in% df_flue_dry$site)
@@ -42,7 +42,7 @@ ddf_obs_dry %>%
 
 Do the same thing with EVI.
 ```{r}
-obs_eval <- readRDS("data/obs_eval_v2_EVI.rds")
+load("data/obs_eval_v2_EVI.RData")
 obs_eval_evi <- obs_eval
 
 ddf_obs_dry_evi <- obs_eval_evi$ddf %>% 
@@ -109,7 +109,7 @@ ggsave("fig/fapar_seasonality_bysite.pdf", width=10, height = 18)
 ET seasonality by site using AET (which included fAPAR in this simulation):
 
 ```{r  message=FALSE, warning=FALSE}
-out_eval <- readRDS("data/out_eval_v2.rds")
+load("data/out_eval_v2.RData")
 
 ddf_modobs_dry <- out_eval$aet$fluxnet2015$data$meandoydf %>% 
   filter(sitename %in% df_flue_dry$site)
@@ -130,12 +130,12 @@ convert_le <- function(x){ x / (60*60*24)}
 
 Modelled vs. observed ET using PET * fAPAR (red):
 ```{r  message=FALSE, warning=FALSE}
-# mod <- readRDS("data/mod.rds")
+# load("data/mod.RData")
 
 ## load v2 data - should be identical except for fapar (prescribed fapar not used for water balance in these simulations)
-mod <- readRDS("data/mod_v2_EVI.rds")
+load("data/mod_v2_EVI.RData") 
 mod_evi <- mod
-mod <- readRDS("data/mod_v2.rds")
+load("data/mod_v2.RData")
 
 ddf_modobs <- mod$daily %>% 
   bind_rows(.id="sitename") %>% 
@@ -220,3 +220,5 @@ ddf_modobs_meandoy %>%
 
 ggsave("fig/et_pet_fapar_corr_seasonality_bysite.pdf", width=10, height = 10)
 ```
+
+

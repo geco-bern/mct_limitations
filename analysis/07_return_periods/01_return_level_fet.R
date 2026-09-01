@@ -11,7 +11,7 @@ args <- c(chunk_info$chunk, chunk_info$chunks)
 overwrite <- identical(tolower(Sys.getenv("MCT_OVERWRITE", "false")), "true")
 ensure_directory("data/df_rl")
 
-df_corr <- readRDS("data/df_corr.rds")
+load("data/df_corr.RData")
 
 df_corr_tmp <- df_corr %>% 
   dplyr::select(lon, lat, s0 = cwd_lue0_fet) %>% ## select which one to consider here!
@@ -25,7 +25,7 @@ df_corr_sub <- df_corr_tmp %>%
 ##------------------------------------------------------------------------
 ## asdf
 ##------------------------------------------------------------------------
-filn <- paste0("data/df_rl/df_rl_fet_ichunk_", args[1], "_", args[2], ".rds")
+filn <- paste0("data/df_rl/df_rl_fet_ichunk_", args[1], "_", args[2], ".RData")
 
 df_rl_diag <- df_corr_sub %>% 
   drop_na() %>% 
@@ -35,7 +35,7 @@ df_rl_diag <- df_corr_sub %>%
   ungroup()
 
 # ## xxx debug
-# filn <- paste0("data/df_rl/df_rl_fet_ichunk_TEST.rds")
+# filn <- paste0("data/df_rl/df_rl_fet_ichunk_TEST.RData")
 # df_rl_diag <- df_rl_diag %>% 
 #   dplyr::filter(lon > 120 & lon < 121)
 
@@ -45,7 +45,7 @@ if (nrow(df_rl_diag)>0){
       mutate(data = purrr::map2(ilon, data, ~calc_return_level(.x, .y))) %>% 
       unnest(data) %>% 
       dplyr::select(-ilon)
-    saveRDS(df, file = filn)
+    save(df, file = filn)
   } else {
     print(paste("File exists already: ", filn))
   }

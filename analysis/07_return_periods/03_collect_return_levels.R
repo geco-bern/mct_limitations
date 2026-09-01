@@ -7,5 +7,5 @@ df_rl_nSIF <- purrr::map_dfr(as.list(seq(30)),
 df_rl_fet <- purrr::map_dfr(as.list(seq(30)),
                                   ~collect_rl_fet(.))
 
-saveRDS(df_rl_nSIF, file = "data/df_rl_nSIF.rds")
-saveRDS(df_rl_fet, file = "data/df_rl_fet.rds")
+save(df_rl_nSIF, file = "data/df_rl_nSIF.RData")
+save(df_rl_fet, file = "data/df_rl_fet.RData")

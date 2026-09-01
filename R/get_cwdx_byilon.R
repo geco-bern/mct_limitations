@@ -5,7 +5,7 @@ get_cwdx_byilon <- function(ilon_hires, df_lat = NULL){
   
   ## construct output file name
   dirn <- "data/df_cwdx/"
-  filn <- paste0("df_cwdx_ilon_", ilon_hires, ".rds")
+  filn <- paste0("df_cwdx_ilon_", ilon_hires, ".RData")
   if (!dir.exists(dirn)) system("mkdir -p data/df_cwdx")
   path <- paste0(dirn, filn)
   
@@ -18,9 +18,9 @@ get_cwdx_byilon <- function(ilon_hires, df_lat = NULL){
 
     ## Open file with daily water balance
     dirn <- "data/df_bal/"
-    filn <- paste0("df_bal_ilon_", ilon_hires, ".rds")
+    filn <- paste0("df_bal_ilon_", ilon_hires, ".RData")
     if (!file.exists(paste0(dirn, filn))) rlang::abort(paste("Aborting. File does not exist:", paste0(dirn, filn)))
-    df <- readRDS(paste0(dirn, filn))
+    load(paste0(dirn, filn)) # loads 'df'
     
     ## do it only for latitudes (single cells) where CWDX data was actually found missing
     df_cwdx_corr <- df %>% 
@@ -47,7 +47,7 @@ get_cwdx_byilon <- function(ilon_hires, df_lat = NULL){
       dplyr::select(-data)
 
     ## complement cwdx dataframe with corrected one
-    df <- readRDS(path)
+    load(path)  # loads 'df'
     
     ## correct numerically imprecise digits
     df <- df %>% 
@@ -69,7 +69,7 @@ get_cwdx_byilon <- function(ilon_hires, df_lat = NULL){
     
     ## overwrite file
     print(paste("Overwriting file:", path))
-    saveRDS(df, file = path)
+    save(df, file = path) 
 
     
   } else {
@@ -78,8 +78,8 @@ get_cwdx_byilon <- function(ilon_hires, df_lat = NULL){
       
       ## Open file with daily water balance
       dirn <- "data/df_bal/"
-      filn <- paste0("df_bal_ilon_", ilon_hires, ".rds")
-      df <- readRDS(paste0(dirn, filn))
+      filn <- paste0("df_bal_ilon_", ilon_hires, ".RData")
+      load(paste0(dirn, filn)) # loads 'df'
       
       ## determine CWD and events
       df <- df %>% 
@@ -101,7 +101,7 @@ get_cwdx_byilon <- function(ilon_hires, df_lat = NULL){
         dplyr::select(-data)
       
       print(paste("Writing file:", path))
-      saveRDS(df, file = path)
+      save(df, file = path)
       
     } else {
       print(paste("File exists already:", path))

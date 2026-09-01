@@ -24,11 +24,11 @@ Perform change point detection in SIF ~ CWD regression.
 ```{r}
 ## get data for one longitude slice, based on SIF
 calc_cwd_lue0_byilon(5000, drop_data = FALSE, dirn = "data/df_cwd_lue0_2")
-df <- readRDS("data/df_cwd_lue0_2/df_cwd_lue0_5000.rds")
+load("data/df_cwd_lue0_2/df_cwd_lue0_5000.RData")
 
 ## get data for one longitude slice, based on EF
 calc_cwd_et0_byilon(5000, drop_data = FALSE, dirn = "data/df_cwd_et0_2/")
-df <- readRDS("data/df_cwd_et0_2/df_cwd_et0_5000.rds")
+load("data/df_cwd_et0_2/df_cwd_et0_5000.RData")
 ```
 
 Look at one cell.
@@ -62,7 +62,7 @@ out <- calc_cwd_lue0(df = df_data, inst = df_inst, nam_lue = "fet", do_plot = TR
 out$gg + ylim(0,0.6)
 out$cwd_lue0
 ```
-
+ 
  
  
  

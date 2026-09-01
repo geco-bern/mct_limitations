@@ -1,15 +1,15 @@
 extract_cwdx_byilon_lores <- function(ilon, overwrite = FALSE){
   
-  infil <- paste0("data/df_cwdx_lores/df_cwdx_ilon_", ilon, ".rds")
+  infil <- paste0("data/df_cwdx_lores/df_cwdx_ilon_", ilon, ".RData")
   
   df <- NA
   
   if (file.exists(infil)){
     
-    df <- readRDS(infil)
+    load(infil)
     
     dirn <- "data/df_cwdx_10_20_40_lores/"
-    filn <- paste0("df_cwdx_10_20_40_ilon_", ilon, ".rds")
+    filn <- paste0("df_cwdx_10_20_40_ilon_", ilon, ".RData")
     if (!dir.exists(dirn)) system("mkdir -p data/df_cwdx_10_20_40_lores")
     path <- paste0(dirn, filn)
     
@@ -32,11 +32,11 @@ extract_cwdx_byilon_lores <- function(ilon, overwrite = FALSE){
         dplyr::select(lon, lat, cwdx10, cwdx20, cwdx40, cwdx80, cwdx100, cwdx200, cwdmax)
       
       print(paste("Writing file:", path))
-      saveRDS(df, file = path)
+      save(df, file = path)
       
     } else {
       print(paste("File exists already:", path))
-      df <- readRDS(path)
+      load(path)
     }
     
   } else {

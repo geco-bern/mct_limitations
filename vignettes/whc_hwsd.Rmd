@@ -50,26 +50,26 @@ df <- rbeni::nc_to_df(paste0("~/data/soil/hwsd/hwsd_wieder/data/", zid, "_SAND.n
 ## Calculate soil parameters
 Calculate soil parameters following Saxton & Rawls 2006
 ```{r warning = FALSE, message = FALSE}
-filnam <- paste0("data/", zid, "_df_sr.rds")
+filnam <- paste0("data/", zid, "_df_sr.Rdata")
 if(!exists("df_srXXX")){
   if (!file.exists(filnam)){
     df_sr <- df %>% calc_soilparams(method = "saxtonrawls")
-    saveRDS(df_sr, file = filnam)
+    save(df_sr, file = filnam)
   } else {
-    df_sr <- readRDS(filnam)
+    load(filnam)
   }
 }
 ```
 
 Calculate soil parameters following Balland et al. 2008
 ```{r warning = FALSE, message = FALSE}
-filnam <- paste0("data/", zid, "_df_bl.rds")
+filnam <- paste0("data/", zid, "_df_bl.Rdata")
 if(!exists("df_blXXX")){
   if (!file.exists(filnam)){
     df_bl <- df %>% calc_soilparams(method = "balland")
-    saveRDS(df_bl, file = paste0("data/", zid, "_df_bl.rds"))
+    save(df_bl, file = paste0("data/", zid, "_df_bl.Rdata"))
   } else {
-    df_bl <- readRDS(filnam)
+    load(filnam)
   }
 }
 ```
@@ -121,8 +121,8 @@ ggsave(paste0("fig/modobs_whc_", zid, "_saxtonrawls_balland.pdf"), width=5, heig
 
 Compare distribution of values as histograms
 ```{r}
-if (!exists("df_bl")) df_bl <- readRDS(paste0("data/", zid, "_df_bl.rds"))
-if (!exists("df_sr")) df_sr <- readRDS(paste0("data/", zid, "_df_sr.rds"))
+if (!exists("df_bl")) load(paste0("data/", zid, "_df_bl.Rdata"))
+if (!exists("df_sr")) load(paste0("data/", zid, "_df_sr.Rdata"))
 df_tmp <- df_sr %>% 
   select(whc_sr = whc) %>% 
   bind_cols(select(df_bl, whc_bl = whc)) %>% 

@@ -5,7 +5,7 @@ get_cwdx_byilon_lores <- function(ilon){
   
   ## construct output file name
   dirn <- "data/df_cwdx_lores/"
-  filn <- paste0("df_cwdx_ilon_", ilon, ".rds")
+  filn <- paste0("df_cwdx_ilon_", ilon, ".RData")
   if (!dir.exists(dirn)) system("mkdir -p data/df_cwdx_lores")
   path <- paste0(dirn, filn)
   
@@ -13,8 +13,8 @@ get_cwdx_byilon_lores <- function(ilon){
     
     ## Open file with daily water balance
     dirn <- "data/df_bal_lores/"
-    filn <- paste0("df_bal_ilon_", ilon, ".rds")
-    df <- readRDS(paste0(dirn, filn))
+    filn <- paste0("df_bal_ilon_", ilon, ".RData")
+    load(paste0(dirn, filn)) # loads 'df'
     
     ## determine CWD and events
     df <- df %>% 
@@ -39,7 +39,7 @@ get_cwdx_byilon_lores <- function(ilon){
       dplyr::select(-data)
     
     print(paste("Writing file:", path))
-    saveRDS(df, file = path)
+    save(df, file = path)
     
   }
 

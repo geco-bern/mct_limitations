@@ -45,7 +45,7 @@ df_out <- purrr::map(as.list(seq(720)), ~get_bal_byilon_lores(.))
 source("R/get_cwdx_byilon_lores.R")
 df_out <- purrr::map(as.list(seq(720)), ~get_cwdx_byilon_lores(.))
 
-df <- readRDS("data/df_file_availability.rds")
+load("data/df_file_availability.RData")
 
 df |> 
   dplyr::filter(!avl_snow)
@@ -69,3 +69,4 @@ df |>
 df |> 
   ungroup() |> 
   dplyr::filter(!avl_cwdx_10_20_40)
+

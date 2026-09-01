@@ -264,7 +264,7 @@ ggsave("fig/max_ef_fluxnet2015.png", width = 6, height = 4)
 
 ```{r}
 source("R/test_cwd_tseries.R")
-# df <- readRDS("data/df_cwdx/df_cwdx_ilon_5000.rds")
+# load("data/df_cwdx/df_cwdx_ilon_5000.RData")
 
 idxc <- 1
 idxa <- 500
@@ -312,7 +312,7 @@ ggsave("fig/cwd_tseries.png", width = 12, height = 7)
 
 How does S0 vary along topographic gradients? Select limited region (not too different climate) and plot S0 distribution (boxplot) along CTI bins.
 ```{r}
-df <- readRDS("data/df_cwdx_10_20_40.rds") # created by analysis/04_cwd_extremes/04_collect_return_levels.R
+load("data/df_cwdx_10_20_40.RData") # loads 'df', created by analysis/04_cwd_extremes/04_collect_return_levels.R
 
 df_cwdx <- df |>
   mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3))
@@ -366,7 +366,7 @@ df_cwdx <- df_cwdx %>%
 ### Apply vegetation mask
 
 ```{r}
-df_vegmask <- readRDS("data/df_vegmask.rds")
+load("data/df_vegmask.RData")  # loads df_vegmask
 
 df_cwdx <- df_cwdx |>
   left_join(df_vegmask,

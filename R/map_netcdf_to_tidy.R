@@ -1,4 +1,4 @@
-# Convert NetCDF stacks with {map2tidy} while preserving the data contract.
+# Convert NetCDF stacks with {map2tidy} while preserving legacy file contracts.
 
 normalise_tidy_time <- function(df) {
   df$data <- lapply(df$data, function(data) {
@@ -65,7 +65,7 @@ map_netcdf_to_tidy <- function(nclist,
 
   output_paths <- file.path(
     path.expand(outdir),
-    paste0(fileprefix, "_ilon_", selected, ".rds")
+    paste0(fileprefix, "_ilon_", selected, ".RData")
   )
   todo <- selected[overwrite | !file.exists(output_paths)]
   if (!length(todo)) {
@@ -122,16 +122,16 @@ map_netcdf_to_tidy <- function(nclist,
 
     output <- file.path(
       path.expand(outdir),
-      paste0(fileprefix, "_ilon_", longitude_index, ".rds")
+      paste0(fileprefix, "_ilon_", longitude_index, ".RData")
     )
-    write_rds_atomic(df, output)
+    write_rdata_atomic(df, "df", output)
     message("Wrote ", output)
     output
   }, character(1))
 
   written <- stats::na.omit(written)
   missing_indices <- setdiff(todo, vapply(written, function(path) {
-    as.integer(sub(".*_ilon_([0-9]+)[.]rds$", "\\1", path))
+    as.integer(sub(".*_ilon_([0-9]+)[.]RData$", "\\1", path))
   }, integer(1)))
   if (length(missing_indices)) {
     warning(

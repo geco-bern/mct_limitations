@@ -5,20 +5,20 @@
 source("analysis/_common.R")
 
 ## WHC, prepared by analysis/05_soil/01_calculate_soil_parameters.R,
-## analysis/05_soil/03_combine_soil_parameters.R, and code above writing "data/df_hwsd_hires.rds"
-# df_whc <- readRDS("data/df_whc_hires.rds")  # this has oddly missing values in south america
-df_whc <- readRDS("data/df_whc_hires_lasthope.rds")
+## analysis/05_soil/03_combine_soil_parameters.R, and code above writing "data/df_hwsd_hires.RData"
+# load("data/df_whc_hires.RData")  # loads 'df_whc' - this has oddly missing values in south america
+load("data/df_whc_hires_lasthope.RData")  # loads 'df_whc' - this one is complete
 
 df_whc <- df_whc |> 
   dplyr::select(out) |> 
   unnest(out)
-saveRDS(df_whc, file = "data/df_whc.rds")
+save(df_whc, file = "data/df_whc.RData")
 
 ## add biome info
 df_biome <- nc_to_df("~/data/biomes/wwf_ecoregions/official/wwf_terr_ecos_raster.nc", varnam = "biome") |> 
   tidyr::drop_na(biome)
 
-df <- readRDS("data/df_cwdx_10_20_80.rds")
+load("data/df_cwdx_10_20_80.RData") # loads 'df', created by analysis/04_cwd_extremes/04_collect_return_levels.R
 
 ## merge
 df <- df |> 
@@ -30,7 +30,7 @@ df <- df |>
               mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)), 
             by = c("lon", "lat"))
 
-saveRDS(df, file = "data/df_mct_merged.rds")
+save(df, file = "data/df_mct_merged.RData")
 
 gg <- df_whc |> 
   mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) |> 
@@ -86,7 +86,7 @@ ggsave("fig/map_whc_top.pdf", width = 10, height = 6)
 ggsave("fig/map_whc_top.png", width = 10, height = 6)
 
 source("R/calc_zroot.R")
-df <- readRDS("data/df_mct_merged.rds")
+load("data/df_mct_merged.RData")
 
 df <- df |> 
   rowwise() |> 
@@ -100,22 +100,22 @@ df <- df |>
  ungroup() |> 
  dplyr::select(lon, lat, biome, starts_with("zroot_"))
 
-saveRDS(df, file = "data/df_zroot80.rds")
+save(df, file = "data/df_zroot80.RData")
 
 ## save this as a mask
 df_mask <- df |> 
   mutate(mask = ifelse(!is.na(zroot_cwd80), 1, NA)) |> 
   dplyr::select(lon, lat, mask)
-saveRDS(df_mask, file = "data/df_mask.rds")
+save(df_mask, file = "data/df_mask.RData")
 
-df <- readRDS("data/df_zroot80.rds")
+load("data/df_zroot80.RData")
 
 df |> 
   ggplot(aes(zroot_cwd80/1000, ..density..)) + 
   geom_density() +
   xlim(0, 30)
 
-df <- readRDS("data/df_zroot80.rds")
+load("data/df_zroot80.RData")
 
 nc <- df_to_grid(df, varnam = "zroot_cwd80", lonnam = "lon", latnam = "lat")
 write_nc2(nc, varnams = "zroot_cwd80", lon = df$lon |> unique() |> sort(), lat = df$lat |> unique() |> sort(), path = "data/zroot_cwd80.nc", make_zdim = FALSE)
@@ -123,7 +123,7 @@ write_nc2(nc, varnams = "zroot_cwd80", lon = df$lon |> unique() |> sort(), lat =
 system("cdo remapbil,data-raw/grid/gridfile_quartdeg.txt data/zroot_cwd80.nc data/zroot_cwd80_quartdeg.nc")
 system("cdo remapbil,data-raw/grid/gridfile_tenthdeg.txt data/zroot_cwd80.nc data/zroot_cwd80_tenthdeg.nc")
 
-df_vegmask_tenthdeg <- readRDS("data/df_vegmask_tenthdeg.rds")
+load("data/df_vegmask_tenthdeg.RData")  # loads df_vegmask_tenthdeg
 
 nc_tenthdeg <- nc_to_df("data/zroot_cwd80_tenthdeg.nc", varnam = "zroot_cwd80") |> 
   mutate(lon = round(lon, digits = 2), lat = round(lat, digits = 2)) |>
@@ -157,7 +157,7 @@ gg$ggmap <- gg$ggmap +
 gg_fig3b <- gg$ggmap
 gg_fig3b_legend <- gg$gglegend
 
-df <- readRDS("data/df_zroot80.rds")
+load("data/df_zroot80.RData") # loads df
 
 gg_hist_zr <- df |> 
   # filter(zroot_cwd80 < 25000) |>
@@ -169,7 +169,7 @@ gg_hist_zr <- df |>
   labs(x = expression(italic(z)[CWDX80] ~ "(m)"), y = "Count")
 gg_hist_zr
 
-filn <- "data/df_zroot_sj02.rds"
+filn <- "data/df_zroot_sj02.RData"
 
 if (!file.exists(filn)){
 
@@ -206,15 +206,15 @@ if (!file.exists(filn)){
                   zroot_cwd40 = calc_zroot(cwdx40, whc_t, whc_s, roots, imperm)
                   )
 
-  saveRDS(df_zroot, file = filn)
+  save(df_zroot, file = filn)
   
 } else {
   
-  df_zroot <- readRDS(filn)
+  load(filn)
   
 }
 
-siteinfo <- readRDS("data/siteinfo_sj02.rds")
+load("data/siteinfo_sj02.RData")
 
 df_sj02 <- read_csv("~/data/rootingdepth/root_profiles_schenkjackson02/data/root_profiles_D50D95.csv") |> 
   dplyr::rename(lon = Longitude, lat = Latitude) |> 
@@ -236,10 +236,10 @@ df_sj02 <- df_sj02 |>
               dplyr::select(sitename, biome_name = biome_name),
             by = "sitename")
 
-saveRDS(df_sj02, file = paste0("data/df_sj02_biome_wwf_NEW.rds"))
+save(df_sj02, file = paste0("data/df_sj02_biome_wwf_NEW.Rdata"))
 
 library(ggridges)
-# df_sj02 <- readRDS("data/df_sj02_biome_wwf.rds")
+#load("data/df_sj02_biome_wwf.Rdata")
 
 df_sj02 |> 
   dplyr::select(sitename, biome_name, obs = D95_extrapolated, mod = zroot_cwdx40, lon, lat) |>  # change to mod = zroot_cwdx20_global
@@ -270,7 +270,7 @@ df_sj02 |>
 ggsave("fig/modobs_ridges_zroot_biome_wwf_2022.pdf", width = 15, height = 10)
 ggsave("fig/modobs_ridges_zroot_biome_wwf_2022.png", width = 15, height = 10)
 
-# df_sj02 <- readRDS("data/df_sj02_biome_wwf_NEW.rds")
+#load("data/df_sj02_biome_wwf_NEW.Rdata")
 
 df_corr_biome <- df_sj02 |> 
   dplyr::filter(biome_name != "Mangroves") |> 
@@ -294,7 +294,7 @@ gg_sj02_10 <- out$gg + labs(title = "10% quantile by biome, SJ02 data",
               x = expression(italic(z)[CWDX40] ~ " (m)"),
               y = expression("Observed" ~ italic(z)[root] ~ " (m)"))
 gg_sj02_10
-saveRDS(gg_sj02_10, file = "data/gg_sj02_10.rds")
+save(gg_sj02_10, file = "data/gg_sj02_10.RData")
 
 out <- df_corr_biome |> 
   analyse_modobs2("q25_zroot_cwdx40", "q25_zroot_obs", label = FALSE, id = "biome_name", nlabels = 3)
@@ -302,7 +302,7 @@ gg_sj02_25 <- out$gg + labs(title = "25% quantile by biome, SJ02 data",
               x = expression(italic(z)[CWDX40] ~ " (m)"),
               y = expression("Observed" ~ italic(z)[root] ~ " (m)"))
 gg_sj02_25
-saveRDS(gg_sj02_25, file = "data/gg_sj02_25.rds")
+save(gg_sj02_25, file = "data/gg_sj02_25.RData")
 
 out <- df_corr_biome |> 
   analyse_modobs2("q50_zroot_cwdx40", "q50_zroot_obs", label = FALSE, id = "biome_name", nlabels = 3)
@@ -310,7 +310,7 @@ gg_sj02_50 <- out$gg + labs(title = "50% quantile by biome, SJ02 data",
               x = expression(italic(z)[CWDX40] ~ " (m)"),
               y = expression("Observed" ~ italic(z)[root] ~ " (m)"))
 gg_sj02_50
-saveRDS(gg_sj02_50, file = "data/gg_sj02_50.rds")
+save(gg_sj02_50, file = "data/gg_sj02_50.RData")
 
 out <- df_corr_biome |> 
   analyse_modobs2("q75_zroot_cwdx40", "q75_zroot_obs", label = FALSE, id = "biome_name", nlabels = 3)
@@ -318,7 +318,7 @@ gg_sj02_75 <- out$gg + labs(title = "75% quantile by biome, SJ02 data",
               x = expression(italic(z)[CWDX40] ~ " (m)"),
               y = expression("Observed" ~ italic(z)[root] ~ " (m)"))
 gg_sj02_75
-saveRDS(gg_sj02_75, file = "data/gg_sj02_75.rds")
+save(gg_sj02_75, file = "data/gg_sj02_75.RData")
 
 out <- df_corr_biome |> 
   analyse_modobs2("q90_zroot_cwdx40", "q90_zroot_obs", label = FALSE, id = "biome_name", nlabels = 3)
@@ -326,7 +326,7 @@ gg_sj02_90 <- out$gg + labs(title = "90% quantile by biome, SJ02 data",
               x = expression(italic(z)[CWDX40] ~ " (m)"),
               y = expression("Observed" ~ italic(z)[root] ~ " (m)"))
 gg_sj02_90
-saveRDS(gg_sj02_90, file = "data/gg_sj02_90.rds")
+save(gg_sj02_90, file = "data/gg_sj02_90.RData")
 
 df_tmp <- df_modobs |> 
   mutate(error = zroot - D95_extrapolated) |> 
@@ -383,7 +383,7 @@ df_sif |>
 
 ggsave(paste0("fig/modobs_ridges_cwd_biome_wwf_NEW", siteset, ".pdf"), width = 15, height = 10)
 
-df_modobs_reOLD <- readRDS("data/df_modobs_reOLD.rds")
+load("data/df_modobs_reOLD.Rdata")
 df_modobs_new <- dplyr::select(df_modobs, sitename, cwdx20, zroot)
 
 df_test <- df_modobs_reOLD |>

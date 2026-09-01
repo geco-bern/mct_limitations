@@ -282,15 +282,15 @@ get_data_mct_chunk <- function(df, idx,
   # df <- df %>% 
   #   mutate(data = purrr::map(out_ilon_ilat, ~get_data_mct_gridcell( .$ilon, .$ilat, ...)))
   
-  # outfil <- paste0("./data/v3/df_plantwhc_mct", as.character(idx), ".rds")
+  # outfil <- paste0("./data/v3/df_plantwhc_mct", as.character(idx), ".Rdata")
   # print(paste("Saving to", outfil, "..."))
-  # saveRDS(df, file = outfil)
+  # save(df, file = outfil)
   # print("... done.")
-  # saveRDS(idx, file = "./data/idx.rds")
+  # save(idx, file = "./data/idx.Rdata")
   # dir <- "~/sofun/output_nc_global_sofun/"
-  # gridfile <- "./data/df_grid.rds"
-  # df_grid <- readRDS(gridfile)
-  # idx <- readRDS("./data/idx.rds")
+  # gridfile <- "./data/df_grid.Rdata"
+  # load(gridfile)
+  # load <- "./data/idx.Rdata"
   
   return(df)
 }

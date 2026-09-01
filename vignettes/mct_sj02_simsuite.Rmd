@@ -49,7 +49,7 @@ dir_fapar <- "~/sofun/input_sj02zroot_sofun/sitedata/fapar/"
 
 Load ALEXI-ET and WATCH-WFDEI precipitation data for each site. This is prepared by `analysis/02_prepare_spatial/03_get_sj02_data.R`. This loads an object called `df_alexi`.
 ```{r}
-df_alexi <- readRDS("data/df_alexi_sj02.rds")
+load("data/df_alexi_sj02.Rdata")
 ```
 
 ## Clean and complement data
@@ -148,7 +148,7 @@ df_alexi_repaired <- df_alexi %>%
   dplyr::select(-et_mm) %>% 
   dplyr::mutate(df    = purrr::map(df, ~drop_na(., date))) # Problem: The first row in `df_alexi$df` is always NA. This is a bug. Drop the row.
 
-saveRDS(df_alexi_repaired, file = "data/df_alexi_repaired_sj02.rds")
+save(df_alexi_repaired, file = "data/df_alexi_repaired_sj02.Rdata")
 ```
 
 Check if all is correct for a site where elevation data was given already before and `et_mm` calculated and now re-calculated - should yield identical results.
@@ -300,7 +300,7 @@ df_alexi_snow <- df_alexi_repaired %>%
   mutate(df = purrr::map(df, ~slice(., -1))) %>% 
   mutate(df = purrr::map(df, ~simulate_snow(.)))
 
-saveRDS(df_alexi_snow, file = "data/df_alexi_snow_sj02.rds")
+save(df_alexi_snow, file = "data/df_alexi_snow_sj02.RData")
 ```
 
 
@@ -310,7 +310,7 @@ Calculate the daily water balance and apply the MCT function to get CWD events i
 ```{r}
 source("R/get_bal.R")
 
-filn <- "data/df_mct_sj02_alexi_reOLD.rds"
+filn <- "data/df_mct_sj02_alexi_reOLD.RData"
 
 if (!file.exists(filn)){
   avl_et <- function(df, varnam_et){
@@ -333,17 +333,17 @@ if (!file.exists(filn)){
           fittype = "Gumbel"))
       )
     
-  saveRDS(df_mct_sj02_alexi, file = filn)
+  save(df_mct_sj02_alexi, file = filn)
   
 } else {
-  df_mct_sj02_alexi <- readRDS(filn)
+  load(filn)
 }
 ```
 
 
 Test with slower snow melt just for alpine sites.
 ```{r}
-df_whc <- readRDS("data/df_whc_sj02_reOLD.rds")
+load("data/df_whc_sj02_reOLD.RData")
 df_alpine <- df_modobs %>%
   dplyr::filter(Vegetation == "alpine herbaceous") %>%
   dplyr::select(sitename, zroot_wtd, D95_extrapolated)
@@ -417,7 +417,7 @@ df_test_alpine <- df_alexi_repaired %>%
 
 The following figure shows the distribution of WHC* values:
 ```{r}
-# ddf_mct_simsuite <- readRDS("data/ddf_mct_simsuite.rds") xxx ??? don't know what this is for
+# load("data/ddf_mct_simsuite.Rdata") xxx ??? don't know what this is for
 df_mct_sj02_alexi %>% 
   dplyr::select(idx, out_mct_00_80) %>% 
   dplyr::mutate(whc20 = purrr::map_dbl(out_mct_00_80, ~extract_return_level(., 20))) %>% 
@@ -431,16 +431,16 @@ df_mct_sj02_alexi %>%
 
 Using the very nice ingestr package.
 ```{r}
-filn <- "data/df_hwsd_sj02.rds"
+filn <- "data/df_hwsd_sj02.RData"
 if (!file.exists(filn)){
   df_hwsd <- ingest(
     dplyr::select(ungroup(df_mct_sj02_alexi), sitename = idx, lon, lat),
     source = "hwsd",
     settings = list(fil = "~/data/hwsd/HWSD_RASTER/hwsd.bil")
     )
-  saveRDS(df_hwsd, file = filn)
+  save(df_hwsd, file = filn)
 } else {
-  df_hwsd <- readRDS(filn)
+  load(filn)
 }
 ```
 
@@ -459,7 +459,7 @@ df_whc <- df_hwsd %>%
   mutate(data_topsoil = purrr::map(data_topsoil, ~calc_soilparams(., method = "balland")),
          data_subsoil = purrr::map(data_subsoil, ~calc_soilparams(., method = "balland")))
 
-saveRDS(df_whc, file = "data/df_whc_sj02_reOLD.rds")
+save(df_whc, file = "data/df_whc_sj02_reOLD.RData")
 ```
 
 Plot the distribution of values.
@@ -501,7 +501,7 @@ df_zroot <- df_mct_sj02_alexi %>%
   rowwise() %>% 
   dplyr::mutate(zroot = calc_zroot(whcXX, whc_t, whc_s, roots, imperm))
 
-saveRDS(df_zroot, file = "data/df_zroot_sj02_reOLD.rds")
+save(df_zroot, file = "data/df_zroot_sj02_reOLD.RData")
 ```
 
 The following figure shows the distribution of zroot* values:
@@ -522,7 +522,7 @@ df_modobs <- read_csv("~/data/rootingdepth/root_profiles_schenkjackson02/data/ro
   dplyr::left_join(dplyr::select(df_zroot, zroot, sitename), by = "sitename") %>% 
   dplyr::mutate(D50 = 1000 * D50, D95 = 1000 * D95, D50_extrapolated = 1000 * D50_extrapolated, D95_extrapolated = 1000 * D95_extrapolated)
 
-saveRDS(df_modobs, file = "data/df_modobs_reOLD.rds")
+save(df_modobs, file = "data/df_modobs_reOLD.RData")
 ```
 
 ### Distribution of values
@@ -586,7 +586,7 @@ df_modobs <- df_alexi_repaired %>%
   mutate(wtd_fan13 = ifelse(is.na(wtd_fan13), 99999, wtd_fan13)) %>% 
   mutate(zroot_wtd = ifelse(zroot > wtd_fan13, wtd_fan13, zroot))
 
-saveRDS(df_modobs, file = "data/df_modobs_sj02_reOLD.rds")
+save(df_modobs, file = "data/df_modobs_sj02_reOLD.RData")
 ```
 
 Updated histogram by vegetation type
@@ -718,7 +718,7 @@ df_wwf <- ingest(
   dir = "~/data/biomes/wwf_ecoregions/official/",
   settings = list(layer = "wwf_terr_ecos")
 )
-saveRDS(df_wwf, file = "./data/df_wwf_sj02.rds")
+save(df_wwf, file = "./data/df_wwf_sj02.RData")
 ```
 
 Combine dataframes.
@@ -728,7 +728,7 @@ df_modobs <- df_wwf %>%
   unnest(data) %>% 
   dplyr::select(sitename, BIOME, biome_wwf = BIOME_NAME, ECO_NAME, ECO_NUM) %>% 
   right_join(df_modobs, by = "sitename")
-saveRDS(df_modobs, file = "data/df_modobs_sj02.rds")
+save(df_modobs, file = "data/df_modobs_sj02.RData")
 ```
 
 Plot.
@@ -872,5 +872,5 @@ df_modobs <- df_modobs %>%
             by = "sitename") %>% 
   dplyr::select(sitename, cwd20, zroot, zroot_wtd)
 df_modobs_reOLD <- dplyr::select(df_modobs, sitename, cwd20, zroot, zroot_wtd)
-saveRDS(df_modobs_reOLD, file = "data/df_modobs_reOLD.rds")
+save( df_modobs_reOLD, file = "data/df_modobs_reOLD.Rdata")
 ```

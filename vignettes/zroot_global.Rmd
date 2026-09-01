@@ -109,50 +109,50 @@ df_40y_sr_v1 <- df_sr_v1 %>%
   rowwise() %>% 
   drop_na() %>% 
   mutate(zroot = calc_zroot(whc_mct_40y, whc_t, whc_s))
-saveRDS(df_40y_sr_v1, file = "./data/df_40y_sr_v1.rds")
+save(df_40y_sr_v1, file = "./data/df_40y_sr_v1.Rdata")
 
 df_20y_sr_v1 <- df_sr_v1 %>% 
   rowwise() %>% 
   drop_na() %>% 
   mutate(zroot = calc_zroot(whc_mct_20y, whc_t, whc_s))
-saveRDS(df_20y_sr_v1, file = "./data/df_20y_sr_v1.rds")
+save(df_20y_sr_v1, file = "./data/df_20y_sr_v1.Rdata")
 
 df_40y_bl_v1 <- df_bl_v1 %>% 
   rowwise() %>% 
   drop_na() %>% 
   mutate(zroot = calc_zroot(whc_mct_40y, whc_t, whc_s))
-saveRDS(df_40y_bl_v1, file = "./data/df_40y_bl_v1.rds")
+save(df_40y_bl_v1, file = "./data/df_40y_bl_v1.Rdata")
 
 df_20y_bl_v1 <- df_bl_v1 %>% 
   rowwise() %>% 
   drop_na() %>% 
   mutate(zroot = calc_zroot(whc_mct_20y, whc_t, whc_s))
-saveRDS(df_20y_bl_v1, file = "./data/df_20y_bl_v1.rds")
+save(df_20y_bl_v1, file = "./data/df_20y_bl_v1.Rdata")
 
 # v3
 df_40y_sr_v3 <- df_sr_v3 %>% 
   rowwise() %>% 
   drop_na() %>% 
   mutate(zroot = calc_zroot(whc_mct_40y, whc_t, whc_s))
-saveRDS(df_40y_sr_v3, file = "./data/df_40y_sr_v3.rds")
+save(df_40y_sr_v3, file = "./data/df_40y_sr_v3.Rdata")
 
 df_20y_sr_v3 <- df_sr_v3 %>% 
   rowwise() %>% 
   drop_na() %>% 
   mutate(zroot = calc_zroot(whc_mct_20y, whc_t, whc_s))
-saveRDS(df_20y_sr_v3, file = "./data/df_20y_sr_v3.rds")
+save(df_20y_sr_v3, file = "./data/df_20y_sr_v3.Rdata")
 
 df_40y_bl_v3 <- df_bl_v3 %>% 
   rowwise() %>% 
   drop_na() %>% 
   mutate(zroot = calc_zroot(whc_mct_40y, whc_t, whc_s))
-saveRDS(df_40y_bl_v3, file = "./data/df_40y_bl_v3.rds")
+save(df_40y_bl_v3, file = "./data/df_40y_bl_v3.Rdata")
 
 df_20y_bl_v3 <- df_bl_v3 %>% 
   rowwise() %>% 
   drop_na() %>% 
   mutate(zroot = calc_zroot(whc_mct_20y, whc_t, whc_s))
-saveRDS(df_20y_bl_v3, file = "./data/df_20y_bl_v3.rds")
+save(df_20y_bl_v3, file = "./data/df_20y_bl_v3.Rdata")
 ```
 
 Distribution of rooting depth for v3 and different pedotransfer functions, 40 yr return period.

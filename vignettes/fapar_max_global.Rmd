@@ -83,7 +83,7 @@ out$gg +
 
 Still a weird blob for cells where EVI is very high. Tropics?
 ```{r}
-df_anders <- readRDS("data/df_anders.rds")
+load("data/df_anders.Rdata")
 df <- df %>% 
   left_join(df_anders, by=c("lon", "lat")) %>%
   mutate(evi = ifelse(landclass == "forest_tropical", NA, evi),
@@ -147,6 +147,7 @@ purrr::map(
 ```
 
 Then combine all regridded files into a single file using `./bash/combine_files_evi_zmaw.sh` and extend to additional time steps and missing values on grid by `./extend_evi_zmaw.R`.
+
 
 
 

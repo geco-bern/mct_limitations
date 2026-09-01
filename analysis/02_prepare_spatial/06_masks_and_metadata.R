@@ -38,7 +38,7 @@ df_vegmask <- nc_to_df("~/data/modis_monthly-evi/zmaw_data/modis_landcover__LPDA
   mutate(nonveg = (urban_and_builtup + snowandice + water)/100) |> 
   mutate(vegmask = ifelse(nonveg > 0.99, NA, 1))
 
-saveRDS(df_vegmask, file = "data/df_vegmask.rds")
+save(df_vegmask, file = "data/df_vegmask.RData")
 
 df_vegmask_tenthdeg <- nc_to_df("~/data/modis_monthly-evi/zmaw_data/modis_landcover__LPDAAC__v5.1__0.1deg__2011.nc", 
                        varnam = "urban_and_builtup") |> 
@@ -69,7 +69,7 @@ df_vegmask_tenthdeg <- nc_to_df("~/data/modis_monthly-evi/zmaw_data/modis_landco
   mutate(nonveg = (urban_and_builtup + snowandice + water)/100) |> 
   mutate(vegmask = ifelse(nonveg > 0.99, NA, 1))
 
-saveRDS(df_vegmask_tenthdeg, file = "data/df_vegmask_tenthdeg.rds")
+save(df_vegmask_tenthdeg, file = "data/df_vegmask_tenthdeg.RData")
 
 if (siteset=="sj02"){
   ##----------------------------------------------
@@ -214,7 +214,7 @@ df_hwsd <- rbeni::nc_to_df("~/data/soil/hwsd/hwsd_wieder/data/S_SAND.nc4", "S_SA
   ) |> 
   mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) 
 
-saveRDS(df_hwsd, file = "data/df_hwsd_hires.rds")
+save(df_hwsd, file = "data/df_hwsd_hires.RData")
 
 ## something is going wrong
 df_test <- nc_to_df(
@@ -229,7 +229,7 @@ all_lon[1:3]
 (df_test$lon[1:3] |> unique())
 
 ## load if it's not in the workspace yet
-df_hwsd <- readRDS("data/df_hwsd_hires.rds")
+load("data/df_hwsd_hires.RData")
 
 nc <- df_to_grid(df_hwsd, varnam = "T_SAND", lonnam = "lon", latnam = "lat")
 write_nc2(nc, varnams = "T_SAND", lon = df_hwsd$lon |> unique() |> sort(), lat = df_hwsd$lat |> unique() |> sort(), path = "data/T_SAND.nc", make_zdim = FALSE)
@@ -255,20 +255,20 @@ if (siteset != "global"){
   ## Site-scale set
   ##----------------------------------------------
   ## Collect HWSD data from database
-  filn <- paste0("data/df_hwsd_", siteset, ".rds")
+  filn <- paste0("data/df_hwsd_", siteset, ".RData")
   if (!file.exists(filn)){
     df_hwsd <- ingest(
       siteinfo,
       source = "hwsd",
       settings = list(fil = "~/data/hwsd/HWSD_RASTER/hwsd.bil")
       )
-    saveRDS(df_hwsd, file = filn)
+    save(df_hwsd, file = filn)
   } else {
-    df_hwsd <- readRDS(filn)
+    load(filn)
   }
 
   ## Calculate FC, PWP, and WHC from texture data.
-  filn <- paste0("data/df_whc_", siteset, ".rds")
+  filn <- paste0("data/df_whc_", siteset, ".RData")
   if (!file.exists(filn)){
     df_whc <- df_hwsd |> 
       mutate(data = purrr::map(data, ~slice(., 1))) |> 
@@ -282,9 +282,9 @@ if (siteset != "global"){
       mutate(data_soiltext_top = purrr::map(data_soiltext_top, ~calc_soilparams(., method = "balland")),
              data_soiltext_sub = purrr::map(data_soiltext_sub, ~calc_soilparams(., method = "balland")))
 
-    saveRDS(df_whc, file = filn)
+    save(df_whc, file = filn)
   } else {
-    df_whc <- readRDS(filn)
+    load(filn)
   }
 
 }
@@ -293,7 +293,7 @@ if (siteset != "global"){
 siteinfo <- siteinfo |> 
   left_join(df_whc, by = "sitename")
 
-df_hwsd <- readRDS("data/df_hwsd_hires.rds")
+load("data/df_hwsd_hires.RData")
 
 if (siteset!="global"){
  
@@ -316,14 +316,14 @@ if (siteset != "global"){
   ## Site-scale set
   ##----------------------------------------------
   ## Collect HWSD data from database
-  filn <- paste0("data/df_wtd_fan_", siteset, ".rds")
+  filn <- paste0("data/df_wtd_fan_", siteset, ".RData")
   if (!file.exists(filn)){
     df_wtd <- siteinfo |> 
       dplyr::select(sitename, lon, lat) |> 
       ingest_wtd_fan()
-    saveRDS(df_wtd, file = filn)
+    save(df_wtd, file = filn)
   } else {
-    df_wtd <- readRDS(filn)
+    load(filn)
   }
 
 }
@@ -367,7 +367,7 @@ if (siteset != "global"){
   ## Site-scale set
   ##----------------------------------------------
   ## WWF biome (Ecoregions dataset)
-  filn <- paste0("data/df_biome_wwf_", siteset, ".rds")
+  filn <- paste0("data/df_biome_wwf_", siteset, ".RData")
   if (!file.exists(filn)){
     
     df_wwf <- ingest(
@@ -378,9 +378,9 @@ if (siteset != "global"){
       ) |> 
       mutate(data = purrr::map(data, ~slice(., 1)))
     
-    saveRDS(df_wwf, file = filn)
+    save(df_wwf, file = filn)
   } else {
-    df_wwf <- readRDS(filn)
+    load(filn)
   }
 }
 
@@ -392,10 +392,10 @@ siteinfo <- siteinfo |>
             by = "sitename"
             )
 
-filn <- paste0("data/siteinfo_", siteset, ".rds")
-saveRDS(siteinfo, file = filn)
+filn <- paste0("data/siteinfo_", siteset, ".RData")
+save(siteinfo, file = filn)
 
-siteinfo <- readRDS(filn)
+load(filn)
 # filn <- paste0("data/siteinfo_", siteset, ".csv")
 # siteinfo |> 
 #   tidyr::unnest(c(data_soiltext_top, data_soiltext_sub)) |> 
