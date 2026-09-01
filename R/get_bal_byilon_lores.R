@@ -38,21 +38,37 @@ get_bal_byilon_lores <- function(ilon, config = read_input_config()){
         config$et$low_resolution_source,
         "longitude"
       )
+      forcing_digits <- source_coordinate_digits(
+        config$precipitation$rain,
+        "longitude"
+      )
       
       ## get closest matching latitude indices and merge data frames
       df <- df_pet %>% 
         
         ## round to correct numerical imprecision on some lon and lat values
-        mutate(lon = round(lon, digits = coordinate_digits), lat = round(lat, digits = coordinate_digits)) %>%
+        mutate(
+          lon = round(lon, digits = coordinate_digits),
+          lat = round(lat, digits = coordinate_digits),
+          lon_lores = round(lon_lores, digits = forcing_digits),
+          lat_lores = round(lat_lores, digits = forcing_digits)
+        ) %>%
         
         ## select only time and configured ET from the converted dataframe
         mutate(data = purrr::map(data, ~dplyr::select(., time, et_mm))) %>%
         
         ## merge watch data into alexi data frame
         left_join(df_snow %>% 
-                    mutate(lon = round(lon, digits = coordinate_digits), lat = round(lat, digits = coordinate_digits)) %>%
-                    rename(data_snow = data),
-                  by = c("lon", "lat")) %>% 
+                    mutate(
+                      lon = round(lon, digits = forcing_digits),
+                      lat = round(lat, digits = forcing_digits)
+                    ) %>%
+                    rename(
+                      lon_lores = lon,
+                      lat_lores = lat,
+                      data_snow = data
+                    ),
+                  by = c("lon_lores", "lat_lores")) %>%
         
         ## select only time and liquid water to soil from watch data frame
         mutate(data_snow = purrr::map(data_snow, ~dplyr::select(., time, liquid_to_soil))) %>% 
@@ -63,7 +79,7 @@ get_bal_byilon_lores <- function(ilon, config = read_input_config()){
         
         ## merge liquid into 'data'
         mutate(data = purrr::map2(data, data_snow, ~left_join(.x, .y, by = "time"))) %>% 
-        dplyr::select(-data_snow) %>% 
+        dplyr::select(-data_snow, -lon_lores, -lat_lores) %>%
         
         ## interpolate ET, get water balance, and cut NA from head and tail
         # slice(50) %>% 

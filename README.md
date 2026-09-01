@@ -1,4 +1,4 @@
-# mct
+# MCT Limitations
 
 *Benjamin D. Stocker*
 
@@ -73,18 +73,21 @@ FORTRAN `NAMELIST`. Each source entry defines:
 ET sources additionally set `conversion` to either
 `"latent_energy_to_mm"` (energy converted with configured temperature and
 elevation) or `"identity_mm_day"` (the source is already ET in mm d-1). The
-rain, snow, temperature, and low-resolution ET grids must match because those
-inputs are joined during snow simulation and the low-resolution balance. The
-default namelist reproduces the existing ALEXI ET and WATCH-WFDEI
-precipitation/temperature analysis for 2003–2017.
+precipitation and temperature grids must match because those inputs are joined
+during snow simulation. A coarser ET source is mapped to its nearest forcing
+cells for the low-resolution balance.
+Precipitation `form` can be `"separate"` for distinct rain and snow sources or
+`"total"` to partition total precipitation using configured temperature. The
+default namelist selects ALEXI ET, MSWEP V3.16 Past total precipitation, and
+ERA5-Land temperature for the 2003–2017 analysis period.
 
-The selected ET and precipitation IDs form a run ID such as
-`et-alexi__prec-watch-wfdei`. Every climate-dependent checkpoint, NetCDF,
+The selected ET, precipitation, and temperature IDs form a run ID such as
+`et-alexi__prec-mswep-v3.16-past__temp-era5-land`. Every climate-dependent checkpoint, NetCDF,
 diagnostic, figure, and UBELIX log carries that suffix, for example:
 
 ```text
-data/df_bal/df_bal_ilon_123__et-alexi__prec-watch-wfdei.rds
-fig/map_cwdx80__et-alexi__prec-watch-wfdei.pdf
+data/df_bal/df_bal_ilon_123__et-alexi__prec-mswep-v3.16-past__temp-era5-land.rds
+fig/map_cwdx80__et-alexi__prec-mswep-v3.16-past__temp-era5-land.pdf
 ```
 
 To maintain multiple namelists, copy the default file and select one without

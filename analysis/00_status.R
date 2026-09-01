@@ -23,9 +23,15 @@ source_output_pattern <- function(source) {
   )
 }
 
+snow_output_pattern <- if (identical(config$precipitation$form, "separate")) {
+  source_output_pattern(config$precipitation$snow)
+} else {
+  "-"
+}
+
 source_patterns <- c(
   "@precipitation_tidy" = source_output_pattern(config$precipitation$rain),
-  "@snow_tidy" = source_output_pattern(config$precipitation$snow),
+  "@snow_tidy" = snow_output_pattern,
   "@temperature_tidy" = source_output_pattern(config$temperature$source),
   "@et_tidy" = source_output_pattern(config$et$source),
   "@et_lores_tidy" = source_output_pattern(config$et$low_resolution_source)
@@ -68,7 +74,7 @@ jobs$expected_outputs[jobs$job %in% c(
 )] <- hires_count
 jobs$expected_outputs[jobs$job %in% c(
   "prepare_precipitation", "prepare_snowfall", "prepare_temperature",
-  "watch_swrad", "simulate_snow"
+  "simulate_snow"
 )] <- forcing_count
 jobs$expected_outputs[jobs$job %in% c(
   "prepare_et_lores", "sif_jj_lores", "sif_pk_lores",
@@ -89,6 +95,11 @@ jobs$status <- ifelse(
   ifelse(jobs$outputs_found > 0L, "started", "not started"),
   ifelse(jobs$outputs_found >= jobs$expected_outputs, "complete", "incomplete")
 )
+if (identical(config$precipitation$form, "total")) {
+  jobs$outputs_found[jobs$job == "prepare_snowfall"] <- 0L
+  jobs$expected_outputs[jobs$job == "prepare_snowfall"] <- 0L
+  jobs$status[jobs$job == "prepare_snowfall"] <- "not applicable"
+}
 
 print(
   jobs[c("stage", "job", "outputs_found", "expected_outputs", "status")],

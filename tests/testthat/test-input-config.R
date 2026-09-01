@@ -7,18 +7,28 @@ default_config_path <- testthat::test_path(
 test_that("default climate inputs produce a stable run identifier", {
   config <- read_input_config(default_config_path)
 
-  expect_equal(climate_run_id(config), "et-alexi__prec-watch-wfdei")
+  expected_id <- "et-alexi__prec-mswep-v3.16-past__temp-era5-land"
+  expect_equal(climate_run_id(config), expected_id)
   expect_equal(
     climate_output_path("data/result.rds", config),
-    "data/result__et-alexi__prec-watch-wfdei.rds"
+    paste0("data/result__", expected_id, ".rds")
   )
   expect_equal(
     climate_output_path(
-      "data/result__et-alexi__prec-watch-wfdei.rds",
+      paste0("data/result__", expected_id, ".rds"),
       config
     ),
-    "data/result__et-alexi__prec-watch-wfdei.rds"
+    paste0("data/result__", expected_id, ".rds")
   )
+})
+
+test_that("default precipitation uses MSWEP total precipitation", {
+  config <- read_input_config(default_config_path)
+
+  expect_equal(config$precipitation$form, "total")
+  expect_null(config$precipitation$snow)
+  expect_equal(config$precipitation$rain$variable, "precipitation")
+  expect_equal(config$temperature$id, "era5-land")
 })
 
 test_that("configured grids drive longitude lookup", {
@@ -46,6 +56,26 @@ test_that("snow simulation inputs must share a grid", {
   dput(config, path)
 
   expect_error(read_input_config(path), "must use the same grid")
+})
+
+test_that("separate precipitation requires a snowfall source", {
+  config <- dget(default_config_path)
+  config$precipitation$form <- "separate"
+  path <- tempfile(fileext = ".R")
+  on.exit(unlink(path), add = TRUE)
+  dput(config, path)
+
+  expect_error(read_input_config(path), "precipitation[$]snow")
+})
+
+test_that("precipitation form is validated", {
+  config <- dget(default_config_path)
+  config$precipitation$form <- "mixed"
+  path <- tempfile(fileext = ".R")
+  on.exit(unlink(path), add = TRUE)
+  dput(config, path)
+
+  expect_error(read_input_config(path), "either 'separate' or 'total'")
 })
 
 test_that("input identifiers are safe for filenames", {

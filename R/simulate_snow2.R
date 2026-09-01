@@ -1,12 +1,22 @@
-simulate_snow <- function(df){
+simulate_snow <- function(df, precipitation_form = c("separate", "total")){
+
+  precipitation_form <- match.arg(precipitation_form)
 
   temp <- df$temp
   prec <- df$prec
-  snow <- df$snow
 
   ## fixed parameters
   temp_threshold <- 1.0
   maxmeltrate <- 1.0
+
+  if (identical(precipitation_form, "total")) {
+    ## MSWEP provides total precipitation. Partition its water equivalent with
+    ## the same temperature threshold used by the degree-day snow model.
+    snow <- ifelse(temp <= temp_threshold, prec, 0.0)
+    prec <- ifelse(temp <= temp_threshold, 0.0, prec)
+  } else {
+    snow <- df$snow
+  }
 
   snow_pool <- 0
   liquid_to_soil <- rep(NA, length(prec))

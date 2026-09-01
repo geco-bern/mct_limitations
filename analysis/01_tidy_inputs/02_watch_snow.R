@@ -6,6 +6,13 @@ source("R/map_netcdf_to_tidy.R")
 
 args <- chunk_arguments()
 config <- read_input_config()
+if (identical(config$precipitation$form, "total")) {
+  message(
+    "No separate snowfall input is required; total precipitation will be ",
+    "partitioned with configured temperature during snow simulation."
+  )
+  quit(status = 0L)
+}
 source_config <- config$precipitation$snow
 nclist <- source_netcdf_files(source_config)
 

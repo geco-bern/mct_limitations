@@ -87,6 +87,17 @@ read_input_config <- function(path = input_config_path()) {
     "temperature$id"
   )
 
+  precipitation_form <- config$precipitation$form
+  if (is.null(precipitation_form)) precipitation_form <- "separate"
+  if (!is.character(precipitation_form) || length(precipitation_form) != 1L ||
+      !precipitation_form %in% c("separate", "total")) {
+    stop(
+      "precipitation$form must be either 'separate' or 'total'.",
+      call. = FALSE
+    )
+  }
+  config$precipitation$form <- precipitation_form
+
   validate_source_config(config$et$source, "et$source", require_conversion = TRUE)
   validate_source_config(
     config$et$low_resolution_source,
@@ -109,23 +120,23 @@ read_input_config <- function(path = input_config_path()) {
     )
   }
   validate_source_config(config$precipitation$rain, "precipitation$rain")
-  validate_source_config(config$precipitation$snow, "precipitation$snow")
+  if (identical(config$precipitation$form, "separate")) {
+    validate_source_config(config$precipitation$snow, "precipitation$snow")
+  }
   validate_source_config(config$temperature$source, "temperature$source")
-  if (!same_grid(config$precipitation$rain, config$precipitation$snow) ||
-      !same_grid(config$precipitation$rain, config$temperature$source)) {
+  if (identical(config$precipitation$form, "separate") &&
+      !same_grid(config$precipitation$rain, config$precipitation$snow)) {
     stop(
-      "precipitation$rain, precipitation$snow, and temperature$source ",
-      "must use the same grid.",
+      "precipitation$rain and precipitation$snow must use the same grid.",
       call. = FALSE
     )
   }
-  if (!same_grid(config$et$low_resolution_source, config$precipitation$rain)) {
+  if (!same_grid(config$precipitation$rain, config$temperature$source)) {
     stop(
-      "et$low_resolution_source must use the precipitation grid.",
+      "precipitation$rain and temperature$source must use the same grid.",
       call. = FALSE
     )
   }
-
   years <- unlist(config$analysis_period[c("start_year", "end_year")])
   if (length(years) != 2L || anyNA(as.integer(years)) || years[[1]] > years[[2]]) {
     stop("analysis_period must define ordered start_year and end_year.", call. = FALSE)
@@ -136,7 +147,11 @@ read_input_config <- function(path = input_config_path()) {
 }
 
 climate_run_id <- function(config = read_input_config()) {
-  paste0("et-", config$et$id, "__prec-", config$precipitation$id)
+  paste0(
+    "et-", config$et$id,
+    "__prec-", config$precipitation$id,
+    "__temp-", config$temperature$id
+  )
 }
 
 climate_output_path <- function(path, config = read_input_config()) {

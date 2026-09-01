@@ -13,7 +13,12 @@ submit_job() {
 }
 
 precipitation_id=$(submit_job prepare_precipitation)
-snowfall_id=$(submit_job prepare_snowfall)
+precipitation_form=$(Rscript -e 'source("R/input_config.R"); cat(read_input_config()$precipitation$form)')
+if [[ "$precipitation_form" == "separate" ]]; then
+  snowfall_id=$(submit_job prepare_snowfall)
+else
+  snowfall_id=""
+fi
 watch_swrad_id=$(submit_job watch_swrad)
 temperature_id=$(submit_job prepare_temperature)
 configured_et_id=$(submit_job prepare_et)
@@ -22,7 +27,11 @@ sif_pk_id=$(submit_job sif_pk)
 glass_id=$(submit_job glass)
 
 et_id=$(submit_job convert_et_mm "${configured_et_id}:${temperature_id}")
-snow_id=$(submit_job simulate_snow "${precipitation_id}:${snowfall_id}:${temperature_id}")
+snow_dependencies="${precipitation_id}:${temperature_id}"
+if [[ -n "$snowfall_id" ]]; then
+  snow_dependencies="${snow_dependencies}:${snowfall_id}"
+fi
+snow_id=$(submit_job simulate_snow "$snow_dependencies")
 balance_id=$(submit_job calculate_balance "${et_id}:${snow_id}")
 cwdx_id=$(submit_job fit_extremes "$balance_id")
 extract_id=$(submit_job extract_return_levels "$cwdx_id")

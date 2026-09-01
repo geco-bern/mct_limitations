@@ -3,7 +3,9 @@
 # Edit IDs, paths, variable names, transformations, and regular grids here;
 # analysis scripts should not need source-specific edits. Values are transformed
 # as `value * scale + offset`. ET conversion can be "latent_energy_to_mm" or
-# "identity_mm_day". ET and precipitation IDs are embedded in output names.
+# "identity_mm_day". ET, precipitation, and temperature IDs are embedded in
+# output names. Total precipitation is partitioned into rain and snow using the
+# configured temperature source during snow simulation.
 
 list(
   analysis_period = list(
@@ -60,72 +62,54 @@ list(
   ),
 
   precipitation = list(
-    id = "watch-wfdei",
+    id = "mswep-v3.16-past",
+    # MSWEP is total precipitation in mm d-1; snow is diagnosed from temperature.
+    form = "total",
     rain = list(
-      netcdf_dir = "~/data/watch_wfdei",
-      netcdf_pattern = "Rainf_daily_WFDEI_CRU_.*[.]nc$",
-      recursive = TRUE,
-      tidy_dir = "~/data/watch_wfdei/data_tidy",
-      tidy_prefix = "Rainf_daily_WFDEI_CRU_",
-      variable = "Rainf",
+      netcdf_dir = "~/data/mswep_v316/Past/Daily",
+      netcdf_pattern = "^[0-9]{7}[.]nc$",
+      recursive = FALSE,
+      tidy_dir = "~/data/mswep_v316/data_tidy_past_daily",
+      tidy_prefix = "MSWEP_V316_Past_Daily",
+      variable = "precipitation",
       longitude_name = "lon",
       latitude_name = "lat",
-      time_name = "timestp",
-      scale = 86400,
+      time_name = "time",
+      scale = 1,
       offset = 0,
       grid = list(
-        longitude_start = -179.75,
-        longitude_step = 0.5,
-        longitude_count = 720L,
-        latitude_start = -89.75,
-        latitude_step = 0.5,
-        latitude_count = 360L
-      )
-    ),
-    snow = list(
-      netcdf_dir = "~/data/watch_wfdei",
-      netcdf_pattern = "Snowf_daily_WFDEI_CRU_.*[.]nc$",
-      recursive = TRUE,
-      tidy_dir = "~/data/watch_wfdei/data_tidy",
-      tidy_prefix = "Snowf_daily_WFDEI_CRU_",
-      variable = "Snowf",
-      longitude_name = "lon",
-      latitude_name = "lat",
-      time_name = "timestp",
-      scale = 86400,
-      offset = 0,
-      grid = list(
-        longitude_start = -179.75,
-        longitude_step = 0.5,
-        longitude_count = 720L,
-        latitude_start = -89.75,
-        latitude_step = 0.5,
-        latitude_count = 360L
+        longitude_start = -179.95,
+        longitude_step = 0.1,
+        longitude_count = 3600L,
+        latitude_start = -89.95,
+        latitude_step = 0.1,
+        latitude_count = 1800L
       )
     )
   ),
 
   temperature = list(
-    id = "watch-wfdei",
+    id = "era5-land",
     source = list(
-      netcdf_dir = "~/data/watch_wfdei",
-      netcdf_pattern = "Tair_daily_WFDEI_.*[.]nc$",
-      recursive = TRUE,
-      tidy_dir = "~/data/watch_wfdei/data_tidy",
-      tidy_prefix = "Tair_daily_WFDEI_",
-      variable = "Tair",
-      longitude_name = "lon",
-      latitude_name = "lat",
-      time_name = "timestp",
+      # Daily-mean 2 m temperature, bilinearly regridded to MSWEP cell centres.
+      netcdf_dir = "~/data/era5_land/daily_2m_temperature_mswep_grid",
+      netcdf_pattern = "^era5_land_t2m_daily_.*[.]nc$",
+      recursive = FALSE,
+      tidy_dir = "~/data/era5_land/data_tidy_daily_mswep_grid",
+      tidy_prefix = "ERA5_Land_t2m_Daily",
+      variable = "t2m",
+      longitude_name = "longitude",
+      latitude_name = "latitude",
+      time_name = "valid_time",
       scale = 1,
       offset = -273.15,
       grid = list(
-        longitude_start = -179.75,
-        longitude_step = 0.5,
-        longitude_count = 720L,
-        latitude_start = -89.75,
-        latitude_step = 0.5,
-        latitude_count = 360L
+        longitude_start = -179.95,
+        longitude_step = 0.1,
+        longitude_count = 3600L,
+        latitude_start = -89.95,
+        latitude_step = 0.1,
+        latitude_count = 1800L
       )
     )
   ),
