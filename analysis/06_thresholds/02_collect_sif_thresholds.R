@@ -7,19 +7,25 @@ library(magrittr)
 library(rlang)
 
 source("R/workflow_helpers.R")
+source("R/input_config.R")
 source("R/collect_cwd_lue0_byilon.R")
 
+config <- read_input_config()
 df <- run_parallel(
-  seq_len(7200L),
+  seq_len(config$et$source$grid$longitude_count),
   collect_cwd_lue0_byilon,
+  config = config,
   continue_on_error = FALSE
 ) %>% bind_rows()
 
-path <- "data/df_cwd_lue0_2.rds"
+path <- climate_output_path("data/df_cwd_lue0_2.rds", config)
 write_rds_atomic(df, path.expand(path))
 
 vec_lon_avl <- round(unique(df$lon), digits = 3)
-vec_lon_hires <- round(seq(-179.975, 179.975, by = 0.05), digits = 3)
+vec_lon_hires <- round(source_grid_values(config$et$source, "longitude"), digits = 3)
 vec_lon_missing <- vec_lon_hires[!(vec_lon_hires %in% vec_lon_avl)]
-vec_ilon_missing <- (vec_lon_missing + 179.975) / 0.05 + 1
-write_rds_atomic(vec_ilon_missing, "data/vec_ilon_missing.rds")
+vec_ilon_missing <- which(vec_lon_hires %in% vec_lon_missing)
+write_rds_atomic(
+  vec_ilon_missing,
+  climate_output_path("data/vec_ilon_missing_sif.rds", config)
+)

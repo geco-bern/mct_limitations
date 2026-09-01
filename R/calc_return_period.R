@@ -1,6 +1,9 @@
-calc_return_period <- function(ilon, df_s0){
+calc_return_period <- function(ilon, df_s0, config = read_input_config()){
   
-  df <- readRDS(paste0("data/df_cwdx/df_cwdx_ilon_", ilon, ".rds"))
+  df <- readRDS(climate_output_path(
+    paste0("data/df_cwdx/df_cwdx_ilon_", ilon, ".rds"),
+    config
+  ))
   
   df_s0 %>% 
     mutate(lat = round(lat, digits = 3)) %>% 

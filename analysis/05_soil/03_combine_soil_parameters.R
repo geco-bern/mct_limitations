@@ -11,7 +11,7 @@ source("R/extract_whc_byfil.R")
 dir <- "data/df_whc_hires_chunks/"
 filelist <- list.files(
   dir,
-  pattern = "^df_whc_hires_ilon_.*[.]RData$",
+  pattern = "^df_whc_hires_ilon_.*[.]rds$",
   full.names = TRUE
 )
 if (!length(filelist)) {

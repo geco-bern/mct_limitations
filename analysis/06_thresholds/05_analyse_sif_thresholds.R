@@ -4,7 +4,7 @@
 # Extracted from vignettes/archive/workflow_legacy.Rmd.
 source("analysis/_common.R")
 
-df_cwd_lue0 <- readRDS("data/df_cwd_lue0_2.rds")
+df_cwd_lue0 <- readRDS(climate_output_path("data/df_cwd_lue0_2.rds", config))
 
 df_rivers <- readRDS("data/df_rivers.rds")
 source("R/plot_map_cwdx_type_irrigation.R")
@@ -33,7 +33,7 @@ gg <- df_cwd_lue0 |>
 gg$ggmap <- gg$ggmap +
   labs(title = expression(paste(italic("S")[dEF])))
 cowplot::plot_grid(gg$ggmap, gg$gglegend, ncol = 2, rel_widths = c(1, 0.2))
-ggsave("fig/map_cwd_lue0_fet0_casia2.pdf", width = 10, height = 6)
+ggsave(climate_output_path("fig/map_cwd_lue0_fet0_casia2.pdf", config), width = 10, height = 6)
 
 
 # ## central asia S0-Teuling
@@ -68,8 +68,8 @@ gg <- plot_map_cwdx_type_irrigation(
   irr_cutoff = 0.3
   )
 cowplot::plot_grid(gg$ggmap, gg$gglegend, ncol = 2, rel_widths = c(1, 0.15))
-ggsave("fig/map_cwd_lue0_types_lue0_wusa.pdf", width = 10, height = 6)
-ggsave("fig/map_cwd_lue0_types_lue0_wusa.png", width = 10, height = 6)
+ggsave(climate_output_path("fig/map_cwd_lue0_types_lue0_wusa.pdf", config), width = 10, height = 6)
+ggsave(climate_output_path("fig/map_cwd_lue0_types_lue0_wusa.png", config), width = 10, height = 6)
 
 
 ## Amazon, multi layer map
@@ -89,8 +89,8 @@ gg <- plot_map_cwdx_type_irrigation(
   irr_cutoff = 0.3
   )
 cowplot::plot_grid(gg$ggmap, gg$gglegend, ncol = 2, rel_widths = c(1, 0.15))
-ggsave("fig/map_cwd_lue0_types_lue0_amazon.pdf", width = 9, height = 6)
-ggsave("fig/map_cwd_lue0_types_lue0_amazon.png", width = 9, height = 6)
+ggsave(climate_output_path("fig/map_cwd_lue0_types_lue0_amazon.pdf", config), width = 9, height = 6)
+ggsave(climate_output_path("fig/map_cwd_lue0_types_lue0_amazon.png", config), width = 9, height = 6)
 
 
 ## Europe, multi layer map
@@ -111,11 +111,11 @@ gg <- plot_map_cwdx_type_irrigation(
   legend_title = "(mm)"
   )
 cowplot::plot_grid(gg$ggmap, gg$gglegend, ncol = 2, rel_widths = c(1, 0.15))
-ggsave("fig/map_cwd_lue0_types_lue0_europe.pdf", width = 8, height = 6)
-ggsave("fig/map_cwd_lue0_types_lue0_europe.png", width = 8, height = 6)
+ggsave(climate_output_path("fig/map_cwd_lue0_types_lue0_europe.pdf", config), width = 8, height = 6)
+ggsave(climate_output_path("fig/map_cwd_lue0_types_lue0_europe.png", config), width = 8, height = 6)
 
 ## add vegetation mask (fraction of non-vegetated)
-# df_vegmask <- readRDS("data/df_vegmask.rds")
+# df_vegmask <- readRDS("data/df_vegmask.rds") # loads df_vegmask
 df_cwd_lue0 <- df_cwd_lue0 |>
   left_join(df_vegmask |> dplyr::select(lon, lat, nonveg),
             by = c("lon", "lat"))
@@ -155,9 +155,9 @@ df_cwd_lue0_agg <- df_cwd_lue0 |>
   mutate(cwd_lue0_SIF = ifelse(is.nan(cwd_lue0_SIF), NA, cwd_lue0_SIF),
          cwd_lue0_nSIF = ifelse(is.nan(cwd_lue0_nSIF), NA, cwd_lue0_nSIF))
 
-saveRDS(df_cwd_lue0_agg, file = "data/df_cwd_lue0_agg.rds")
+saveRDS(df_cwd_lue0_agg, file = climate_output_path("data/df_cwd_lue0_agg.rds", config))
 
-df_cwd_lue0_agg <- readRDS("data/df_cwd_lue0_agg.rds")
+df_cwd_lue0_agg <- readRDS(climate_output_path("data/df_cwd_lue0_agg.rds", config))
 
 # apply vegetation mask
 df_cwd_lue0_agg <- df_cwd_lue0_agg |> 
@@ -181,12 +181,12 @@ gg <- plot_map4(df_cwd_lue0_agg,
 gg$ggmap <- gg$ggmap + 
   labs(title = expression(paste(italic("S")[dSIF])))
 cowplot::plot_grid(gg$ggmap, gg$gglegend, ncol = 1, rel_heights = c(1, 0.2))
-ggsave("fig/map_cwd_lue0_nSIF.pdf", width = 10, height = 6)
-ggsave("fig/map_cwd_lue0_nSIF.png", width = 10, height = 6)
+ggsave(climate_output_path("fig/map_cwd_lue0_nSIF.pdf", config), width = 10, height = 6)
+ggsave(climate_output_path("fig/map_cwd_lue0_nSIF.png", config), width = 10, height = 6)
 
 gg_fig1b <- gg$ggmap
 gg_fig1_legend <- gg$gglegend
-saveRDS(gg_fig1b, file = "data/gg_fig1b.rds")
+saveRDS(gg_fig1b, file = climate_output_path("data/gg_fig1b.rds", config))
 
 # ## lambda_decay_SIF
 # nc_tenthdeg <- read_nc_onefile("data/lambda_decay_SIF_tenthdeg.nc", varnam = "lambda_decay_SIF")
@@ -201,7 +201,7 @@ saveRDS(gg_fig1b, file = "data/gg_fig1b.rds")
 # ggsave("fig/map_lambda_decay_nSIF.pdf", width = 10, height = 6)
 
 ## all longitudes
-lon_all <- seq(from = -179.975, to = 179.975, by = 0.05) |> 
+lon_all <- source_grid_values(config$et$source, "longitude") |>
   round(digits = 3)
 
 ## available lons
@@ -213,9 +213,12 @@ lon_avl <- df_cwd_lue0 |>
 
 ## missing lons
 lon_missing <- lon_all[!(lon_all %in% lon_avl)]
-ilon_missing <- (lon_missing + 179.975)/0.05 + 1
+ilon_missing <- match(lon_missing, lon_all)
 
-saveRDS(ilon_missing, file = "data/ilon_missing.rds")
+saveRDS(
+  ilon_missing,
+  file = climate_output_path("data/ilon_missing_sif.rds", config)
+)
 
 ## relevant: 3961-4176 and 2161-2232
 

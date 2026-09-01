@@ -1,4 +1,4 @@
-# Convert NetCDF stacks with {map2tidy} while preserving the data contract.
+# Convert NetCDF stacks with {map2tidy} to tagged, restartable tidy checkpoints.
 
 normalise_tidy_time <- function(df) {
   df$data <- lapply(df$data, function(data) {
@@ -28,7 +28,8 @@ map_netcdf_to_tidy <- function(nclist,
                                ilon = NULL,
                                ncores = allocated_cores(),
                                overwrite = FALSE,
-                               fgetdate = NA) {
+                               fgetdate = NA,
+                               output_tag = NULL) {
   if (!requireNamespace("map2tidy", quietly = TRUE)) {
     stop(
       "Package {map2tidy} is required. See README.md for installation instructions.",
@@ -63,10 +64,14 @@ map_netcdf_to_tidy <- function(nclist,
     return(invisible(character()))
   }
 
-  output_paths <- file.path(
-    path.expand(outdir),
-    paste0(fileprefix, "_ilon_", selected, ".rds")
-  )
+  output_name <- function(index) {
+    paste0(
+      fileprefix, "_ilon_", index,
+      if (!is.null(output_tag) && nzchar(output_tag)) paste0("__", output_tag) else "",
+      ".rds"
+    )
+  }
+  output_paths <- file.path(path.expand(outdir), output_name(selected))
   todo <- selected[overwrite | !file.exists(output_paths)]
   if (!length(todo)) {
     message("All outputs assigned to this chunk already exist.")
@@ -122,7 +127,7 @@ map_netcdf_to_tidy <- function(nclist,
 
     output <- file.path(
       path.expand(outdir),
-      paste0(fileprefix, "_ilon_", longitude_index, ".rds")
+      output_name(longitude_index)
     )
     write_rds_atomic(df, output)
     message("Wrote ", output)
@@ -131,7 +136,12 @@ map_netcdf_to_tidy <- function(nclist,
 
   written <- stats::na.omit(written)
   missing_indices <- setdiff(todo, vapply(written, function(path) {
-    as.integer(sub(".*_ilon_([0-9]+)[.]rds$", "\\1", path))
+    as.integer(sub(
+      ".*_ilon_([0-9]+)(?:__.*)?[.]rds$",
+      "\\1",
+      path,
+      perl = TRUE
+    ))
   }, integer(1)))
   if (length(missing_indices)) {
     warning(

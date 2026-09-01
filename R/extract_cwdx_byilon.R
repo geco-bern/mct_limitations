@@ -1,16 +1,21 @@
-extract_cwdx_byilon <- function(ilon, overwrite = FALSE){
+extract_cwdx_byilon <- function(ilon, overwrite = FALSE,
+                                config = read_input_config()){
   
   
-  infil <- paste0("data/df_cwdx/df_cwdx_ilon_", ilon, ".rds")
+  infil <- climate_output_path(
+    paste0("data/df_cwdx/df_cwdx_ilon_", ilon, ".rds"),
+    config
+  )
   
   if (file.exists(infil)){
     
     df <- readRDS(infil)
     
-    dirn <- "data/df_cwdx_10_20_40/"
-    filn <- paste0("df_cwdx_10_20_40_ilon_", ilon, ".rds")
-    if (!dir.exists(dirn)) system("mkdir -p data/df_cwdx_10_20_40")
-    path <- paste0(dirn, filn)
+    path <- climate_output_path(
+      paste0("data/df_cwdx_10_20_40/df_cwdx_10_20_40_ilon_", ilon, ".rds"),
+      config
+    )
+    ensure_directory(dirname(path))
     
     if (!file.exists(path) || overwrite){
       

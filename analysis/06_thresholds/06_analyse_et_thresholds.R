@@ -4,7 +4,7 @@
 # Extracted from vignettes/archive/workflow_legacy.Rmd.
 source("analysis/_common.R")
 
-df_cwd_et0 <- readRDS("data/df_cwd_et0_3.rds")
+df_cwd_et0 <- readRDS(climate_output_path("data/df_cwd_et0_3.rds", config))
 
 ## Detect flattening
 df_cwd_et0 <- df_cwd_et0 |>
@@ -15,21 +15,21 @@ df_irr <- nc_to_df("~/data/irrigation/gmia_v5_aai_pct_0_05deg.nc", varnam = "aai
       mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) |> 
       rename(irr = aai)
 
-saveRDS(df_irr, file = "data/df_irr.rds")
-saveRDS(df_cwd_et0, file = "data/df_cwd_et0_3_flattening.rds")
+saveRDS(df_irr, file = climate_output_path("data/df_irr.rds", config))
+saveRDS(df_cwd_et0, file = climate_output_path("data/df_cwd_et0_3_flattening.rds", config))
 
 df_cwd_et0 |> 
   ggplot(aes(x = cwd_lue0_fet, ..density..)) +
   geom_histogram() +
   xlim(0, 2500)
 
-df_cwd_et0 <- readRDS("data/df_cwd_et0_3_flattening.rds")
+df_cwd_et0 <- readRDS(climate_output_path("data/df_cwd_et0_3_flattening.rds", config))
 df_rivers <- readRDS("data/df_rivers.rds")
-df_irr <- readRDS("data/df_irr.rds")
+df_irr <- readRDS(climate_output_path("data/df_irr.rds", config))
 source("R/plot_map_cwdx_type_irrigation.R")
 
 # ## apply vegetation mask
-# df_vegmask <- readRDS("data/df_vegmask.rds")
+# df_vegmask <- readRDS("data/df_vegmask.rds") # loads df_vegmask
 # df_cwd_et0 <- df_cwd_et0 |> 
 #   left_join(df_vegmask |> dplyr::select(lon, lat, vegmask),
 #             by = c("lon", "lat")) |> 
@@ -68,12 +68,12 @@ gg$ggmap <- gg$ggmap +
 
 gg <- cowplot::plot_grid(gg$ggmap, gg$gglegend, ncol = 2, rel_widths = c(1, 0.15))
 gg
-ggsave("fig/fig2.png", width = 10, height = 5)
-ggsave("fig/fig2.pdf", width = 10, height = 5)
+ggsave(climate_output_path("fig/fig2.png", config), width = 10, height = 5)
+ggsave(climate_output_path("fig/fig2.pdf", config), width = 10, height = 5)
 
 ## save for publication figure
 gg_fig1c <- gg
-saveRDS(gg_fig1c, file = "data/gg_fig1c.rds")
+saveRDS(gg_fig1c, file = climate_output_path("data/gg_fig1c.rds", config))
 
 ## Western USA, multi layer map
 gg <- plot_map_cwdx_type_irrigation(
@@ -92,8 +92,8 @@ gg <- plot_map_cwdx_type_irrigation(
   irr_cutoff = 0.3
   )
 cowplot::plot_grid(gg$ggmap, gg$gglegend, ncol = 2, rel_widths = c(1, 0.15))
-ggsave("fig/map_cwd_lue0_types_fet0_wusa.pdf", width = 10, height = 6)
-ggsave("fig/map_cwd_lue0_types_fet0_wusa.png", width = 10, height = 6)
+ggsave(climate_output_path("fig/map_cwd_lue0_types_fet0_wusa.pdf", config), width = 10, height = 6)
+ggsave(climate_output_path("fig/map_cwd_lue0_types_fet0_wusa.png", config), width = 10, height = 6)
 
 
 ## Amazon, multi layer map
@@ -113,8 +113,8 @@ gg <- plot_map_cwdx_type_irrigation(
   irr_cutoff = 0.3
   )
 cowplot::plot_grid(gg$ggmap, gg$gglegend, ncol = 2, rel_widths = c(1, 0.15))
-ggsave("fig/map_cwd_lue0_types_fet0_amazon.pdf", width = 9, height = 6)
-ggsave("fig/map_cwd_lue0_types_fet0_amazon.png", width = 9, height = 6)
+ggsave(climate_output_path("fig/map_cwd_lue0_types_fet0_amazon.pdf", config), width = 9, height = 6)
+ggsave(climate_output_path("fig/map_cwd_lue0_types_fet0_amazon.png", config), width = 9, height = 6)
 
 
 ## Europe, multi layer map
@@ -134,19 +134,19 @@ gg <- plot_map_cwdx_type_irrigation(
   irr_cutoff = 0.3
   )
 cowplot::plot_grid(gg$ggmap, gg$gglegend, ncol = 2, rel_widths = c(1, 0.15))
-ggsave("fig/map_cwd_lue0_types_fet0_europe.pdf", width = 8, height = 6)
-ggsave("fig/map_cwd_lue0_types_fet0_europe.png", width = 8, height = 6)
+ggsave(climate_output_path("fig/map_cwd_lue0_types_fet0_europe.pdf", config), width = 8, height = 6)
+ggsave(climate_output_path("fig/map_cwd_lue0_types_fet0_europe.png", config), width = 8, height = 6)
 
 ## fET (ET/Rn)
 nc <- df_to_grid(df_cwd_et0, varnam = "cwd_lue0_fet", lonnam = "lon", latnam = "lat")
-write_nc2(nc, varnams = "cwd_lue0_fet", lon = df_cwd_et0$lon |> unique() |> sort(), lat = df_cwd_et0$lat |> unique() |> sort(), path = "data/cwd_lue0_fet.nc", make_zdim = FALSE)
+write_nc2(nc, varnams = "cwd_lue0_fet", lon = df_cwd_et0$lon |> unique() |> sort(), lat = df_cwd_et0$lat |> unique() |> sort(), path = climate_output_path("data/cwd_lue0_fet.nc", config), make_zdim = FALSE)
 
 ## s0_teuling_et
 nc <- df_to_grid(df_cwd_et0 |> mutate(s0_teuling_fet = remove_outliers(s0_teuling_fet, coef = 10)), varnam = "s0_teuling_et", lonnam = "lon", latnam = "lat")
-write_nc2(nc, varnams = "s0_teuling_fet", lon = df_cwd_et0$lon |> unique() |> sort(), lat = df_cwd_et0$lat |> unique() |> sort(), path = "data/s0_teuling_fet.nc", make_zdim = FALSE)
+write_nc2(nc, varnams = "s0_teuling_fet", lon = df_cwd_et0$lon |> unique() |> sort(), lat = df_cwd_et0$lat |> unique() |> sort(), path = climate_output_path("data/s0_teuling_fet.nc", config), make_zdim = FALSE)
 
 ## write as netcdf
-df_cwd_et0 <- readRDS("data/df_cwd_et0_3_flattening.rds")
+df_cwd_et0 <- readRDS(climate_output_path("data/df_cwd_et0_3_flattening.rds", config))
 
 nc <- df_to_grid(df_cwd_et0, varnam = "flat_fet", lonnam = "lon", latnam = "lat")
 image(nc)
@@ -154,10 +154,10 @@ write_nc2(nc,
           varnams = "flat_fet", 
           lon = df_cwd_et0$lon |> unique() |> sort() |> round(digits = 3), 
           lat = df_cwd_et0$lat |> unique() |> sort() |> round(digits = 3), 
-          path = "data/flat_fet.nc", 
+          path = climate_output_path("data/flat_fet.nc", config),
           make_zdim = FALSE
           )
-raster("data/flat_fet.nc")
+raster(climate_output_path("data/flat_fet.nc", config))
 
 lon_orig <- df_cwd_et0$lon |> unique() |> sort() |> round(digits = 3)
 lon <- seq(min(lon_orig), max(lon_orig), by = 0.05)
@@ -188,14 +188,14 @@ write_nc2(nc2,
           varnams = "flat_fet", 
           lon = df_tmp$lon |> unique() |> sort(), 
           lat = df_tmp$lat |> unique() |> sort(), 
-          path = "data/flat_fet.nc", 
+          path = climate_output_path("data/flat_fet.nc", config),
           make_zdim = FALSE
           )
 
 ## test
 image(nc)
 
-rasta <- raster::raster("data/flat_fet.nc")
+rasta <- raster::raster(climate_output_path("data/flat_fet.nc", config))
 library(rasterVis)
 rasterVis::levelplot(rasta)
 
@@ -258,7 +258,7 @@ df_irrbin <- df_tmp |>
   group_by(irr_bin) |> 
   summarise(f_flat = sum(flat_fet, na.rm = TRUE)/n())
 
-saveRDS(df_irrbin, file = "data/df_irrbin.rds")
+saveRDS(df_irrbin, file = climate_output_path("data/df_irrbin.rds", config))
 
 gg2 <- df_irrbin |> 
   drop_na() |> 
@@ -270,13 +270,13 @@ gg2 <- df_irrbin |>
 
 ## create publication figure
 plot_grid(gg1, gg2, ncol = 2, labels = c('a', 'b'))
-ggsave("fig/flattening_analysis.pdf", width = 8, height = 4)
-ggsave("fig/flattening_analysis.png", width = 8, height = 4)
+ggsave(climate_output_path("fig/flattening_analysis.pdf", config), width = 8, height = 4)
+ggsave(climate_output_path("fig/flattening_analysis.png", config), width = 8, height = 4)
 
-df_cwd_et0 <- readRDS("data/df_cwd_et0_3.rds")
+df_cwd_et0 <- readRDS(climate_output_path("data/df_cwd_et0_3.rds", config))
 
 ## add vegetation mask (fraction of non-vegetated)
-df_vegmask <- readRDS("data/df_vegmask.rds")
+df_vegmask <- readRDS("data/df_vegmask.rds") # loads df_vegmask
 df_cwd_et0 <- df_cwd_et0 |>
   left_join(df_vegmask |> dplyr::select(lon, lat, nonveg),
             by = c("lon", "lat"))
@@ -313,9 +313,9 @@ df_cwd_et0_agg <- df_cwd_et0 |>
   rename(lon = lon_mid, lat = lat_mid) |> 
   mutate(cwd_lue0_fet = ifelse(is.nan(cwd_lue0_fet), NA, cwd_lue0_fet))
 
-saveRDS(df_cwd_et0_agg, file = "data/df_cwd_et0_agg.rds")
+saveRDS(df_cwd_et0_agg, file = climate_output_path("data/df_cwd_et0_agg.rds", config))
 
-df_cwd_et0_agg <- readRDS("data/df_cwd_et0_agg.rds")
+df_cwd_et0_agg <- readRDS(climate_output_path("data/df_cwd_et0_agg.rds", config))
 
 df_box <- tibble(
   long = c(45, 95, 95, 45, 45), lat = c(47.5, 47.5, 25, 25, 47.5),
@@ -349,14 +349,14 @@ gg$ggmap <- gg$ggmap +
   geom_path(aes(x = long, y = lat, group = group), data = df_box, size = 0.3, color = "red", )
   
 cowplot::plot_grid(gg$ggmap, gg$gglegend, ncol = 2, rel_heights = c(1, 0.2))
-ggsave("fig/map_cwd_lue0_fet.pdf", width = 10, height = 6)
-ggsave("fig/map_cwd_lue0_fet.png", width = 10, height = 6)
+ggsave(climate_output_path("fig/map_cwd_lue0_fet.pdf", config), width = 10, height = 6)
+ggsave(climate_output_path("fig/map_cwd_lue0_fet.png", config), width = 10, height = 6)
 
 gg_fig1a <- gg$ggmap
-saveRDS(gg_fig1a, file = "data/gg_fig1a.rds")
+saveRDS(gg_fig1a, file = climate_output_path("data/gg_fig1a.rds", config))
 
 gg_fig1_legend <- gg$gglegend
-saveRDS(gg_fig1_legend, file = "data/gg_fig1_legend.rds")
+saveRDS(gg_fig1_legend, file = climate_output_path("data/gg_fig1_legend.rds", config))
 
 df_corr <- read_nc_onefile("data/cwdx20_halfdeg.nc", varnam = "cwdx20") |> 
   nc_to_df(varnam = "cwdx20") |> 
@@ -438,20 +438,20 @@ gg_corr <- out$gg +
         colours = colorRampPalette( c("gray65", "navy", "red", "yellow"))(5), 
         trans = "log", breaks = c(1, 10, 100, 1000, 10000))
 gg_corr
-ggsave("fig/corr_cwd_lue0_nSIF_EF.pdf", width = 6, height = 5)
-ggsave("fig/corr_cwd_lue0_nSIF_EF.png", width = 6, height = 5)
+ggsave(climate_output_path("fig/corr_cwd_lue0_nSIF_EF.pdf", config), width = 6, height = 5)
+ggsave(climate_output_path("fig/corr_cwd_lue0_nSIF_EF.png", config), width = 6, height = 5)
 
-df <- readRDS("data/df_cwdx_10_20_40.rds")
+df <- readRDS(climate_output_path("data/df_cwdx_10_20_40.rds", config)) # loads 'df', created by analysis/04_cwd_extremes/04_collect_return_levels.R
 df_cwdx <- df |> 
   mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) 
 
 ## new version
-df <- readRDS("data/df_cwd_lue0_2.rds")
+df <- readRDS(climate_output_path("data/df_cwd_lue0_2.rds", config))
 df_cwd_lue0 <- df |> 
   mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) 
 rm("df")
 
-df <- readRDS("data/df_cwd_et0_3.rds")
+df <- readRDS(climate_output_path("data/df_cwd_et0_3.rds", config))  # loads 'df'
 df_cwd_et0 <- df |> 
   mutate(lon = round(lon, digits = 3), lat = round(lat, digits = 3)) 
 rm("df")
@@ -481,4 +481,4 @@ df_corr <- df_cwdx |>
   mutate(forest = biome %in% c(1,2,3,4,5,6,12),
          grassland = biome %in% c(7,8))
 
-saveRDS(df_corr, file = "data/df_corr.rds")
+saveRDS(df_corr, file = climate_output_path("data/df_corr.rds", config))
