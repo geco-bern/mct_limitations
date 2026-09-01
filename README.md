@@ -128,7 +128,7 @@ required chunks are present.
 | `01_tidy_inputs` | Convert configured gridded NetCDF inputs to nested tidy R data using `map2tidy` | tagged `*_ilon_*__et-*__prec-*.rds` files in configured `data_tidy` directories |
 | `02_prepare_spatial` | Prepare site metadata, masks, grids, and spatial inputs | site/grid objects in `data/` |
 | `03_water_balance` | Convert ET, simulate snow, and calculate daily balance | `data/df_bal/df_bal_ilon_*__et-*__prec-*.rds` |
-| `04_annual_cwd` | Calculate annual maximum CWD for every gridcell; this is the core endpoint | tagged temporary `data/df_cwd_annual/df_cwd_annual_ilon_*.rds` |
+| `04_annual_cwd` | Calculate annual maximum CWD and preceding cumulative-surplus maxima for every gridcell; this is the core endpoint | tagged temporary `data/df_cwd_annual/df_cwd_annual_ilon_*.rds` |
 | `04_cwd_extremes` | Optional legacy fitting of extreme-value distributions and return levels; not part of the core analysis | tagged `data/df_cwdx_10_20_40*.rds` |
 | `05_soil` | Calculate and combine soil hydraulic properties, then rooting depth | `df_whc_hires_ilon_*.rds` and combined WHC objects |
 | `06_thresholds` | Diagnose SIF- and ET-based CWD thresholds | tagged `data/df_cwd_lue0_2*.rds`, `data/df_cwd_et0_3*.rds` |
@@ -214,12 +214,31 @@ and recovery controls.
 
 The core pipeline ends after the annual-CWD checkpoint. Each longitude-slice
 file contains one row per ALEXI gridcell and a nested `annual_cwd` table with
-`year`, `cwd_mm`, and `n_events`. CWD is calculated from the daily balance of
-MSWEP rain plus simulated snowmelt reaching the soil minus ALEXI ET; ERA5-Land
-temperature controls the rain/snow partition and degree-day melt. Annual maxima
-retain the previous analysis convention of assigning an event to the year in
-which it starts. Years without a newly starting event are retained with `NA`
-CWD; cells with no negative daily balance receive zero.
+`year`, `date_max_cwd`, `cwd_mm`, `date_max_preceding_surplus`,
+`preceding_surplus_year`, `preceding_surplus_mm`, and `n_events`. CWD is
+calculated from the daily balance of MSWEP rain plus simulated snowmelt reaching
+the soil minus ALEXI ET; ERA5-Land temperature controls the rain/snow partition
+and degree-day melt.
+
+For each gridcell, positive daily balances are accumulated as a cumulative
+surplus until that surplus is exhausted or an annual maximum-CWD date is
+reached. Each annual CWD maximum is paired with the latest earlier surplus
+maximum, following the [cwd cumulative-surplus vignette](https://geco-bern.github.io/cwd/articles/cumulative_surplus_example.html).
+This is a preceding-event match, not an unconditional calendar-year lag.
+
+Both CWD and cumulative surplus receive a one-cycle spin-up: the first observed
+calendar year is copied and prepended to the daily balance before either
+calculation. The copied dates are removed from both daily result series before
+annual CWD maxima and preceding-surplus maxima are extracted. Annual CWD is
+therefore the calendar-year maximum among actual (non-spin-up) daily CWD
+values. Years with actual daily data but no CWD receive zero; unavailable years
+remain `NA`.
+
+The daily deficit and surplus calculations are delegated to
+[`cwd::cwd()`](https://geco-bern.github.io/cwd/reference/cwd.html) with
+`do_surplus = TRUE`. The workflow adapter adds disposable tail guards so the
+package can close its final events reliably; these are removed together with
+the spin-up rows before annual values are derived.
 
 The scripts under `analysis/04_cwd_extremes/` have deliberately not been
 deleted. They are optional provenance code for fitting Gumbel/GEV models and
@@ -231,8 +250,11 @@ The principal reusable functions remain under `R/`:
 
 - `convert_et.R`: ET conversion to mass units;
 - `simulate_snow2.R`: snow mass balance;
-- `mct2.R`: cumulative water balance;
-- `calculate_annual_cwd.R`: annual CWD maxima without distribution fitting;
+- `cwd::cwd()`: core cumulative water deficit and surplus calculation;
+- `mct2.R`: retained legacy cumulative-water-balance implementation used by
+  optional historical analyses;
+- `calculate_annual_cwd.R`: annual CWD maxima and preceding cumulative-surplus
+  adapter around `cwd::cwd()` without distribution fitting;
 - `get_plantwhc_mct_bysite.R`: optional legacy extreme-value fitting;
 - `calc_soilparams.R`: soil water-holding capacity;
 - `calc_cwd_lue0_v2.R`: SIF/EF threshold diagnosis;

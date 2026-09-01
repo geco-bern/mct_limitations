@@ -40,8 +40,17 @@ non-array balance analyses and checks formerly embedded in the notebook.
 Run `04_annual_cwd/01_calculate_annual_cwd.R` after the high-resolution daily
 balance. It writes temporary, restartable files under `data/df_cwd_annual/`,
 one per ALEXI longitude slice. Each gridcell has annual maximum CWD values based
-on daily temperature-partitioned MSWEP precipitation and daily ALEXI ET. No
-extreme-value distribution is fitted in the core analysis.
+on daily temperature-partitioned MSWEP precipitation and daily ALEXI ET. The
+same daily balance is used to calculate cumulative-surplus events, and each
+annual CWD maximum is paired with the most recent earlier surplus maximum as in
+the cwd cumulative-surplus vignette. Before calculating either series, the
+first observed calendar year is copied to the head of the daily balance as a
+spin-up cycle. Those padded daily deficit and surplus rows are removed before
+the annual maxima and pairings are extracted. The daily series are transient;
+only the paired annual dataframe is stored. No extreme-value distribution is
+fitted in the core analysis. Both daily series are calculated by
+`cwd::cwd(do_surplus = TRUE)`; the workflow code only handles spin-up and tail
+padding, annual extraction, and the vignette-style preceding-surplus match.
 
 `04_cwd_extremes/` is retained as optional legacy analysis. Its scripts fit
 Gumbel/GEV distributions, extract return levels, repair failed fits, and create

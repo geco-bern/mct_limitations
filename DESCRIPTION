@@ -13,6 +13,7 @@ Imports:
     broom,
     caret,
     cowplot,
+    cwd (>= 3.0.1),
     dplyr,
     extRemes,
     forcats,
@@ -50,6 +51,7 @@ Suggests:
     renv,
     testthat (>= 3.0.0)
 Remotes:
+    geco-bern/cwd,
     geco-bern/map2tidy,
     geco-bern/rbeni,
     geco-bern/ingestr,
