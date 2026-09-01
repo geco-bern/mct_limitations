@@ -1,3 +1,5 @@
+# Optional legacy extreme-value checkpoint; not used by the core workflow.
+
 get_cwdx_byilon <- function(ilon_hires, df_lat = NULL,
                             config = read_input_config()){
   

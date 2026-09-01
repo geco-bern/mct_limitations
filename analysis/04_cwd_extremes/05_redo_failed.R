@@ -1,5 +1,7 @@
 #!/usr/bin/env Rscript
 
+# OPTIONAL NON-CORE ANALYSIS. Repairs outputs from optional distribution fits.
+
 library(dplyr)
 library(purrr)
 library(tidyr)

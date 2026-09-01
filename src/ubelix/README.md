@@ -15,7 +15,7 @@ Available job names are printed when `submit.sh` is called without an argument.
 The default allocation account is `gratis`; override it when required:
 
 ```sh
-MCT_SLURM_ACCOUNT=my_account src/ubelix/submit.sh fit_extremes
+MCT_SLURM_ACCOUNT=my_account src/ubelix/submit.sh calculate_annual_cwd
 ```
 
 Optional controls are:
@@ -26,8 +26,11 @@ Optional controls are:
 - `MCT_ILON=...`: restrict longitude indices inside the R entry point.
 - `MCT_INPUT_CONFIG=...`: select an alternative climate-input namelist.
 
-`submit_pipeline.sh` submits the principal global branches with `afterok`
-dependencies. It does not submit optional site analyses or plotting steps.
+`submit_pipeline.sh` submits the core climate path with `afterok` dependencies:
+configured precipitation, temperature, and ET; snow/rain partitioning; daily
+water balance; and annual CWD. It ends at the temporary annual-CWD checkpoints.
+The extreme-value jobs remain in `jobs.tsv` under
+`04_optional_cwd_extremes`, but the pipeline does not submit them.
 
 Array stdout and stderr are written to
 `logs/ubelix/JOB__ET_PREC_%A_%a.{out,err}`. The same configured run ID appears

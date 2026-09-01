@@ -1,3 +1,6 @@
+# Optional legacy helper that combines CWD calculation with extreme-value
+# fitting. The core workflow uses calculate_annual_cwd() instead.
+
 get_plantwhc_mct_bysite <- function( df, 
                                      out_mct = NULL,
                                      varname_wbal = "wbal", 

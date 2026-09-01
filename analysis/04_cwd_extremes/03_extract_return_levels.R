@@ -1,5 +1,7 @@
 #!/usr/bin/env Rscript
 
+# OPTIONAL NON-CORE ANALYSIS. Requires an explicitly fitted extreme model.
+
 library(dplyr)
 library(purrr)
 library(tidyr)

@@ -38,7 +38,8 @@ source_patterns <- c(
 )
 
 run_specific_stages <- c(
-  "01_tidy_inputs", "03_water_balance", "04_cwd_extremes",
+  "01_tidy_inputs", "03_water_balance", "04_annual_cwd",
+  "04_optional_cwd_extremes",
   "06_thresholds", "07_return_periods", "09_diagnostics"
 )
 
@@ -69,7 +70,7 @@ lores_count <- config$et$low_resolution_source$grid$longitude_count
 forcing_count <- config$precipitation$rain$grid$longitude_count
 jobs$expected_outputs[jobs$job %in% c(
   "prepare_et", "sif_jj", "sif_pk", "glass", "convert_et_mm",
-  "calculate_balance", "fit_extremes", "extract_return_levels",
+  "calculate_balance", "calculate_annual_cwd", "fit_extremes", "extract_return_levels",
   "redo_failed", "calculate_sif_thresholds", "calculate_et_thresholds"
 )] <- hires_count
 jobs$expected_outputs[jobs$job %in% c(

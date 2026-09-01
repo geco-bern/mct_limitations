@@ -1,3 +1,5 @@
+# Optional legacy extreme-value checkpoint; not used by the core workflow.
+
 get_cwdx_byilon_lores <- function(ilon, config = read_input_config()){
   
   source("R/mct2.R")

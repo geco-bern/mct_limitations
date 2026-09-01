@@ -87,7 +87,7 @@ diagnostic, figure, and UBELIX log carries that suffix, for example:
 
 ```text
 data/df_bal/df_bal_ilon_123__et-alexi__prec-mswep-v3.16-past__temp-era5-land.rds
-fig/map_cwdx80__et-alexi__prec-mswep-v3.16-past__temp-era5-land.pdf
+data/df_cwd_annual/df_cwd_annual_ilon_123__et-alexi__prec-mswep-v3.16-past__temp-era5-land.rds
 ```
 
 To maintain multiple namelists, copy the default file and select one without
@@ -128,7 +128,8 @@ required chunks are present.
 | `01_tidy_inputs` | Convert configured gridded NetCDF inputs to nested tidy R data using `map2tidy` | tagged `*_ilon_*__et-*__prec-*.rds` files in configured `data_tidy` directories |
 | `02_prepare_spatial` | Prepare site metadata, masks, grids, and spatial inputs | site/grid objects in `data/` |
 | `03_water_balance` | Convert ET, simulate snow, and calculate daily balance | `data/df_bal/df_bal_ilon_*__et-*__prec-*.rds` |
-| `04_cwd_extremes` | Fit cumulative-water-deficit extremes and collect return levels | tagged `data/df_cwdx_10_20_40*.rds` |
+| `04_annual_cwd` | Calculate annual maximum CWD for every gridcell; this is the core endpoint | tagged temporary `data/df_cwd_annual/df_cwd_annual_ilon_*.rds` |
+| `04_cwd_extremes` | Optional legacy fitting of extreme-value distributions and return levels; not part of the core analysis | tagged `data/df_cwdx_10_20_40*.rds` |
 | `05_soil` | Calculate and combine soil hydraulic properties, then rooting depth | `df_whc_hires_ilon_*.rds` and combined WHC objects |
 | `06_thresholds` | Diagnose SIF- and ET-based CWD thresholds | tagged `data/df_cwd_lue0_2*.rds`, `data/df_cwd_et0_3*.rds` |
 | `07_return_periods` | Calculate, diagnose, and collect return periods | tagged `data/df_rl_*.rds`, `data/df_rp_diag_*.rds` |
@@ -161,7 +162,7 @@ Set `MCT_ILON` to diagnose or recompute selected longitude indices without
 editing a script. It accepts comma-separated values and inclusive ranges:
 
 ```sh
-MCT_ILON=3961-3970,5000 Rscript analysis/04_cwd_extremes/01_fit_extremes.R
+MCT_ILON=3961-3970,5000 Rscript analysis/04_annual_cwd/01_calculate_annual_cwd.R
 ```
 
 Computational functions skip outputs that already exist. Consequently, the
@@ -201,6 +202,7 @@ CPU, memory, time, and expected output counts.
 ```sh
 src/ubelix/submit.sh prepare_et
 src/ubelix/submit.sh calculate_balance
+src/ubelix/submit.sh calculate_annual_cwd
 src/ubelix/submit_pipeline.sh
 ```
 
@@ -210,6 +212,19 @@ name, `SLURM_ARRAY_TASK_ID` for arrays, `afterok` dependencies for the pipeline,
 modules. See `src/ubelix/README.md` for account, partition, Workspace, resource,
 and recovery controls.
 
+The core pipeline ends after the annual-CWD checkpoint. Each longitude-slice
+file contains one row per ALEXI gridcell and a nested `annual_cwd` table with
+`year`, `cwd_mm`, and `n_events`. CWD is calculated from the daily balance of
+MSWEP rain plus simulated snowmelt reaching the soil minus ALEXI ET; ERA5-Land
+temperature controls the rain/snow partition and degree-day melt. Annual maxima
+retain the previous analysis convention of assigning an event to the year in
+which it starts. Years without a newly starting event are retained with `NA`
+CWD; cells with no negative daily balance receive zero.
+
+The scripts under `analysis/04_cwd_extremes/` have deliberately not been
+deleted. They are optional provenance code for fitting Gumbel/GEV models and
+are neither submitted nor required by the core pipeline.
+
 ## Reusable scientific code
 
 The principal reusable functions remain under `R/`:
@@ -217,7 +232,8 @@ The principal reusable functions remain under `R/`:
 - `convert_et.R`: ET conversion to mass units;
 - `simulate_snow2.R`: snow mass balance;
 - `mct2.R`: cumulative water balance;
-- `get_plantwhc_mct_bysite.R`: extreme-value fitting;
+- `calculate_annual_cwd.R`: annual CWD maxima without distribution fitting;
+- `get_plantwhc_mct_bysite.R`: optional legacy extreme-value fitting;
 - `calc_soilparams.R`: soil water-holding capacity;
 - `calc_cwd_lue0_v2.R`: SIF/EF threshold diagnosis;
 - `workflow_helpers.R`: paths, chunking, allocation-aware parallelism, and

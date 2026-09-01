@@ -1,5 +1,7 @@
 #!/usr/bin/env Rscript
 
+# OPTIONAL NON-CORE ANALYSIS. The core workflow stores annual CWD directly.
+
 library(dplyr)
 library(purrr)
 library(tidyr)

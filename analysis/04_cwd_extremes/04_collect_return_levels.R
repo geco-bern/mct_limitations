@@ -1,5 +1,7 @@
 #!/usr/bin/env Rscript
 
+# OPTIONAL NON-CORE ANALYSIS. Requires explicitly extracted return levels.
+
 library(dplyr)
 library(purrr)
 library(tidyr)

@@ -16,11 +16,12 @@ stage	job	script	mode	array	chunks	max_parallel	cpus	memory	time	output_pattern	
 03_water_balance	simulate_snow	analysis/03_water_balance/02_simulate_snow.R	chunk_count	72	72	24	4	10G	3-00:00:00	data/df_snow/df_snow_ilon_*.rds	720	-
 03_water_balance	calculate_balance	analysis/03_water_balance/03_calculate_balance.R	chunk_count	200	200	40	4	75G	3-00:00:00	data/df_bal/df_bal_ilon_*.rds	7200	-
 03_water_balance	calculate_balance_lores	analysis/03_water_balance/04_calculate_balance_lores.R	chunk_count	72	72	24	2	20G	3-00:00:00	data/df_bal_lores/df_bal_ilon_*.rds	720	-
-04_cwd_extremes	fit_extremes	analysis/04_cwd_extremes/01_fit_extremes.R	chunk_count	200	200	40	4	48G	3-00:00:00	data/df_cwdx/df_cwdx_ilon_*.rds	7200	-
-04_cwd_extremes	fit_extremes_lores	analysis/04_cwd_extremes/02_fit_extremes_lores.R	chunk_count	72	72	24	2	20G	3-00:00:00	data/df_cwdx_lores/df_cwdx_ilon_*.rds	720	-
-04_cwd_extremes	extract_return_levels	analysis/04_cwd_extremes/03_extract_return_levels.R	chunk_count	100	100	25	4	96G	3-00:00:00	data/df_cwdx_10_20_40/df_cwdx_10_20_40_ilon_*.rds	7200	-
-04_cwd_extremes	collect_return_levels	analysis/04_cwd_extremes/04_collect_return_levels.R	none	1	1	1	8	48G	3-00:00:00	data/df_cwdx_10_20_40.rds	1	-
-04_cwd_extremes	redo_failed	analysis/04_cwd_extremes/05_redo_failed.R	chunk_count	100	100	25	4	20G	3-00:00:00	data/df_cwdx/df_cwdx_ilon_*.rds	7200	-
+04_annual_cwd	calculate_annual_cwd	analysis/04_annual_cwd/01_calculate_annual_cwd.R	chunk_count	200	200	40	4	48G	3-00:00:00	data/df_cwd_annual/df_cwd_annual_ilon_*.rds	7200	-
+04_optional_cwd_extremes	fit_extremes	analysis/04_cwd_extremes/01_fit_extremes.R	chunk_count	200	200	40	4	48G	3-00:00:00	data/df_cwdx/df_cwdx_ilon_*.rds	7200	-
+04_optional_cwd_extremes	fit_extremes_lores	analysis/04_cwd_extremes/02_fit_extremes_lores.R	chunk_count	72	72	24	2	20G	3-00:00:00	data/df_cwdx_lores/df_cwdx_ilon_*.rds	720	-
+04_optional_cwd_extremes	extract_return_levels	analysis/04_cwd_extremes/03_extract_return_levels.R	chunk_count	100	100	25	4	96G	3-00:00:00	data/df_cwdx_10_20_40/df_cwdx_10_20_40_ilon_*.rds	7200	-
+04_optional_cwd_extremes	collect_return_levels	analysis/04_cwd_extremes/04_collect_return_levels.R	none	1	1	1	8	48G	3-00:00:00	data/df_cwdx_10_20_40.rds	1	-
+04_optional_cwd_extremes	redo_failed	analysis/04_cwd_extremes/05_redo_failed.R	chunk_count	100	100	25	4	20G	3-00:00:00	data/df_cwdx/df_cwdx_ilon_*.rds	7200	-
 05_soil	calculate_soil_parameters	analysis/05_soil/01_calculate_soil_parameters.R	chunk_count	100	100	25	4	36G	3-00:00:00	data/df_whc_hires_chunks/df_whc_hires_ilon_*.rds	100	-
 05_soil	combine_soil_parameters	analysis/05_soil/03_combine_soil_parameters.R	none	1	1	1	8	24G	3-00:00:00	~/data/mct_data/df_whc_hires_lasthope.rds	1	-
 06_thresholds	calculate_sif_thresholds	analysis/06_thresholds/01_calculate_sif_thresholds.R	chunk_count	100	100	25	4	96G	3-00:00:00	data/df_cwd_lue0_2/df_cwd_lue0_*.rds	7200	-

@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# Create CWDX products and maps
+# OPTIONAL NON-CORE ANALYSIS: create fitted CWDX return-level products and maps.
 # Extracted from vignettes/archive/workflow_legacy.Rmd.
 source("analysis/_common.R")
 

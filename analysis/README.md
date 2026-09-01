@@ -35,12 +35,18 @@ Run ET conversion and snow simulation first. Then run the high- or
 low-resolution balance script. `05_prepare_daily_balance.R` contains the
 non-array balance analyses and checks formerly embedded in the notebook.
 
-## 04 — CWD extremes
+## 04 — Annual CWD (core endpoint)
 
-Run `01_fit_extremes.R`, then `03_extract_return_levels.R`, then
-`04_collect_return_levels.R`. `02_fit_extremes_lores.R` is the low-resolution
-branch. `05_redo_failed.R` is only for diagnosed incomplete cells.
-`06_create_products.R` creates the derived maps and analyses.
+Run `04_annual_cwd/01_calculate_annual_cwd.R` after the high-resolution daily
+balance. It writes temporary, restartable files under `data/df_cwd_annual/`,
+one per ALEXI longitude slice. Each gridcell has annual maximum CWD values based
+on daily temperature-partitioned MSWEP precipitation and daily ALEXI ET. No
+extreme-value distribution is fitted in the core analysis.
+
+`04_cwd_extremes/` is retained as optional legacy analysis. Its scripts fit
+Gumbel/GEV distributions, extract return levels, repair failed fits, and create
+the old CWDX products. These scripts are not dependencies of the core workflow
+and are not submitted by `src/ubelix/submit_pipeline.sh`.
 
 ## 05 — Soil and rooting depth
 
