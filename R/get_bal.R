@@ -23,7 +23,8 @@ get_bal <- function(df, varnam_bal, varnam_et, varnam_prec){
              prec = ifelse(is.na(prec), prec_meandoy, prec))
       
     ## For remaining gaps, linearly interpolate ET and assume zero precip
-    df$et <- rbeni::myapprox(df$et)
+    sample_index <- seq_along(df$et)
+    df$et <- stats::approx(sample_index, df$et, xout = sample_index)$y
     df$prec[is.na(df$prec)] <- 0.0
     
     ## calculate daily water balance
@@ -35,7 +36,8 @@ get_bal <- function(df, varnam_bal, varnam_et, varnam_prec){
 
     ## remove NAs at head and tail (if no gapfilling or interpolation is possible)
     if (any(is.na(df[[varnam_bal]]))){
-      df <- rbeni::cutna_headtail_df(df, varnam_bal)
+      non_missing <- which(!is.na(df[[varnam_bal]]))
+      df <- dplyr::slice(df, seq.int(min(non_missing), max(non_missing)))
     }
     
   } else {

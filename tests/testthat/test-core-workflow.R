@@ -93,3 +93,29 @@ test_that("the annual adapter delegates daily calculations to cwd", {
     "(^|,|\\n)\\s*cwd\\s*(\\([^)]*\\))?(,|$)"
   )
 })
+
+test_that("the workflow depends on rgeco rather than rbeni", {
+  description <- read.dcf(project_file("DESCRIPTION"))
+  imports <- description[[1, "Imports"]]
+  remotes <- description[[1, "Remotes"]]
+
+  expect_match(imports, "(^|,|\\n)\\s*rgeco\\s*(,|$)")
+  expect_false(grepl("(^|,|\\n)\\s*rbeni\\s*(,|$)", imports))
+  expect_match(remotes, "geco-bern/rgeco")
+  expect_false(grepl("rbeni", remotes, fixed = TRUE))
+
+  workflow_files <- c(
+    list.files(project_file("R"), full.names = TRUE, pattern = "[.]R$"),
+    list.files(
+      project_file("analysis"),
+      full.names = TRUE,
+      recursive = TRUE,
+      pattern = "[.]R$"
+    )
+  )
+  implementation <- unlist(lapply(workflow_files, readLines, warn = FALSE))
+
+  expect_false(any(grepl("rbeni::", implementation, fixed = TRUE)))
+  expect_true(any(grepl("rgeco::extract_nc", implementation, fixed = TRUE)))
+  expect_true(any(grepl("rgeco::calc_patm", implementation, fixed = TRUE)))
+})

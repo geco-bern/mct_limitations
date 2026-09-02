@@ -23,8 +23,9 @@ convert_et <- function(et_e, tc, elv, return_df = FALSE){
 
   sat_slope <- calc_sat_slope(tc)
   lv <- calc_enthalpy_vap(tc)
-  pw <- calc_density_h2o(tc, calc_patm(elv, par_splash))
-  gamma <- calc_psychro(tc, calc_patm(elv, par_splash), par_splash)
+  patm <- rgeco::calc_patm(elv)
+  pw <- calc_density_h2o(tc, patm)
+  gamma <- calc_psychro(tc, patm, par_splash)
   econ <- sat_slope / (lv * pw * (sat_slope + gamma))
   
   ## J m-2 d-1 -> mm / d
@@ -35,28 +36,6 @@ convert_et <- function(et_e, tc, elv, return_df = FALSE){
   } else {
     return(et_mm)
   }
-
-}
-
-
-calc_patm <- function( elv, par ){
-  #----------------------------------------------------------------   
-  # Calculates atmospheric pressure for a given elevation, assuming
-  # standard atmosphere at sea level (kPo)
-  # Ref:      Allen et al. (1998)
-  # This function is copied from SPLASH
-  #----------------------------------------------------------------
-  # use md_params_core, only: kPo, kL, kTo, kG, kMa, kR
-
-  # # arguments
-  # real, intent(in) :: elv # elevation above sea level, m
-
-  # # function return value
-  # real ::  patm ! atmospheric pressure (Pa)
-
-  patm <- par$kPo * (1.0 - par$kL * elv / par$kTo) ^ (par$kG * par$kMa * 1.e-3 / (par$kR * par$kL))
-
-  return(patm)
 
 }
 
@@ -199,5 +178,4 @@ calc_psychro <- function( tc, press, par_splash ){
   return(psychro)
 
 }
-
 

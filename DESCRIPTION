@@ -8,7 +8,7 @@ Description: Reproducible global gridded workflow for annual maximum
 License: GPL-3
 Encoding: UTF-8
 Depends:
-    R (>= 4.1)
+    R (>= 4.2)
 Imports:
     cwd (>= 3.0.1),
     dplyr,
@@ -20,8 +20,10 @@ Imports:
     ncdf4,
     parallelly,
     purrr,
+    raster,
+    rgeco,
     rlang,
-    rbeni,
+    sp,
     tibble,
     tidyselect,
     tidyr
@@ -33,6 +35,6 @@ Suggests:
 Remotes:
     geco-bern/cwd,
     geco-bern/map2tidy,
-    geco-bern/rbeni
+    geco-bern/rgeco
 VignetteBuilder: knitr
 Config/testthat/edition: 3

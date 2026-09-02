@@ -1,3 +1,11 @@
+extract_elevation <- function(filename, points) {
+  rgeco::extract_nc(points, filename, get_time = FALSE) %>%
+    dplyr::mutate(
+      elv = purrr::map_dbl(data, ~.x[[1L]][[1L]])
+    ) %>%
+    dplyr::select(-data)
+}
+
 get_et_mm_byilon <- function(ilon_hires, config = read_input_config()) {
   find_lat_lores <- function(lat_hires, vec_lat_lores) {
     vec_lat_lores[which.min(abs(lat_hires - vec_lat_lores))]
@@ -78,12 +86,10 @@ get_et_mm_byilon <- function(ilon_hires, config = read_input_config()) {
       )
     rm("df")
 
-    df_elv <- rbeni::extract_pointdata_allsites(
+    df_elv <- extract_elevation(
       path.expand(config$elevation_file),
-      dplyr::select(df_alexi, lon, lat),
-      time = FALSE
+      dplyr::select(df_alexi, lon, lat)
     ) %>%
-      rename(elv = ETOPO1_Bed_g_geotiff) %>%
       mutate(
         lon = round(lon, digits = coordinate_digits),
         lat = round(lat, digits = coordinate_digits)

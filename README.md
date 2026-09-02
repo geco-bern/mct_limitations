@@ -36,7 +36,7 @@ renv::init()
 renv::snapshot()
 ```
 
-The core workflow uses the GitHub packages `cwd`, `map2tidy`, and `rbeni`,
+The core workflow uses the GitHub packages `cwd`, `map2tidy`, and `rgeco`,
 all declared under `Remotes` in `DESCRIPTION`.
 
 ## Climate inputs

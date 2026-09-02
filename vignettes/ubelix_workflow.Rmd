@@ -51,7 +51,7 @@ If packages are centrally managed or already installed, only verify that the
 project loads the key dependencies.
 
 ```{bash}
-Rscript -e 'library(cwd); library(map2tidy); library(rbeni)'
+Rscript -e 'library(cwd); library(map2tidy); library(rgeco)'
 ```
 
 ## 2. Configure and verify the climate inputs
