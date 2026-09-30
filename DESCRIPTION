@@ -29,10 +29,12 @@ Imports:
     tidyselect,
     tidyr
 Suggests:
+    ggrepel,
     knitr,
     renv,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    tricolore (>= 1.2.6)
 Remotes:
     geco-bern/cwd,
     geco-bern/map2tidy,

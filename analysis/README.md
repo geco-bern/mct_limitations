@@ -40,6 +40,25 @@ choose PCWD reset dates.
 and nested plot tabs for calibrated ET--PET, flux distributions by CWD bin, and
 daily CWD/PCWD/CWS diagnostics within each site tab.
 
+`02_site_level/02_select_cwd_models.R` compares three zero-offset annual CWD
+hypotheses at each site: energy (`D = a P`), energy plus storage
+(`D = min(a P, S0)`), and energy plus preceding recharge
+(`D = min(a P, b R(t-1))`). The non-negative scales `a` and `b`, storage
+capacity `S0`, and residual-error scale are fitted separately for each model
+and site. Every pair is tested with a dual-null parametric-bootstrap
+likelihood-ratio contrast, which
+does not rely on a chi-squared reference for boundary or non-nested models.
+Models decisively defeated in a pair are excluded and the least complex
+undefeated model is selected. Leave-one-year-out RMSE and AICc are reported as
+complementary diagnostics. The bootstrap is configured with
+`MCT_MODEL_BOOTSTRAP_REPS`, `MCT_MODEL_BOOTSTRAP_ALPHA`,
+`MCT_MODEL_BOOTSTRAP_SEED`, and `MCT_MODEL_BOOTSTRAP_CORES`.
+
+The outputs are
+`data/site_level/fluxnet_cwd_model_selection.rds` and a compact selected-model
+CSV. `../vignettes/fluxnet_cwd_model_selection.Rmd` demonstrates network-wide
+results and tabbed diagnostics for every site.
+
 ## 03 — Daily water balance
 
 Run these scripts in order:

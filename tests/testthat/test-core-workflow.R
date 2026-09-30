@@ -56,6 +56,7 @@ test_that("only the retained workflow vignettes remain", {
     vignette_files,
     c(
       "core_workflow_synthetic.Rmd",
+      "fluxnet_cwd_model_selection.Rmd",
       "fluxnet_site_diagnostics.Rmd",
       "ubelix_workflow.Rmd"
     )
@@ -66,6 +67,7 @@ test_that("R contains only helpers used by the retained workflow", {
   retained <- c(
     "calculate_annual_cwd.R",
     "convert_et.R",
+    "cwd_model_selection.R",
     "get_annual_cwd_byilon.R",
     "get_bal.R",
     "get_bal_byilon.R",

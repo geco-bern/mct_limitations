@@ -74,6 +74,19 @@ if (!has_results) {
 .tab-content {
   padding-top: 1rem;
 }
+.site-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.75rem 0 1.25rem 0;
+}
+.site-links a {
+  border: 1px solid #d3dce4;
+  border-radius: 0.35rem;
+  padding: 0.25rem 0.5rem;
+  background: #f8fafb;
+  text-decoration: none;
+}
 </style>
 
 This vignette presents all FLUXNET sites that pass the ecosystem and data-quality
@@ -247,6 +260,21 @@ daily time series. These nested R Markdown tabsets provide the same folded
 per-site organization as Quarto panel tabsets while retaining an installable
 R-package vignette. The three cumulative water variables are overlaid in one
 horizontally extended panel so that their timing can be compared directly.
+
+```{r site-links, results='asis'}
+site_anchor <- function(site) {
+  tolower(gsub("[^A-Za-z0-9]+", "-", site))
+}
+cat('<div class="site-links" aria-label="Site shortcuts">\n')
+for (site in site_order) {
+  cat(sprintf(
+    '<a href="#%s" data-toggle="tab">%s</a>\n',
+    site_anchor(site),
+    site
+  ))
+}
+cat('</div>\n')
+```
 
 ```{r site-tabs, results='asis', fig.width=10.5, fig.height=4.2}
 for (site in site_order) {

@@ -69,7 +69,7 @@ MCT_INPUT_CONFIG=config/input_sources_alternative.R \
 | Stage | Purpose | Main checkpoint |
 |---|---|---|
 | `01_tidy_inputs` | Convert configured NetCDF inputs to nested tidy longitude slices with `map2tidy` | configured tidy-cache `.rds` files |
-| `02_site_level` | Derive daily FLUXNET CWD, CWS, calibrated site PET, and PCWD | `data/site_level/fluxnet_cwd_cws_pcwd.rds` |
+| `02_site_level` | Derive daily FLUXNET CWD/CWS/PCWD and select parsimonious annual CWD models | `data/site_level/fluxnet_cwd_cws_pcwd.rds`, `data/site_level/fluxnet_cwd_model_selection.rds` |
 | `03_water_balance` | Convert ET, partition and melt snow, and calculate daily liquid input minus ET | `data/df_bal/df_bal_ilon_*.rds` |
 | `04_annual_cwd` | Calculate annual maximum CWD and preceding maximum surplus for every grid cell | `data/df_cwd_annual/df_cwd_annual_ilon_*.rds` |
 | `10_results` | Plot annual maximum CWD against preceding maximum surplus | `fig/cwd_vs_preceding_surplus.*` |
@@ -129,6 +129,28 @@ compact site summary is also written to
 relationships, PET/scaled-PET/ET distributions by CWD bin, and full-record
 daily CWD/PCWD/CWS series in nested plot tabs within one tab per site, alongside
 network-wide PET-scalar and annual-correlation overviews.
+
+The follow-on model comparison is run with:
+
+```sh
+Rscript analysis/02_site_level/02_select_cwd_models.R
+```
+
+For each site, it compares three zero-offset annual models: energy
+(`D = a P`), energy plus storage (`D = min(a P, S0)`), and energy plus
+preceding recharge (`D = min(a P, b R(t-1))`). The scales `a` and `b`, storage
+capacity `S0`, and residual-error scale are fitted separately for each model
+and site. Every pair is evaluated with
+a dual-null parametric-bootstrap likelihood-ratio contrast. This supplies an
+empirical reference distribution for the boundary-nested storage comparison
+and both non-nested comparisons. Models decisively defeated in any pair are
+excluded; the least complex undefeated model is selected. Leave-one-year-out
+predictions and AICc remain complementary diagnostics. Set
+`MCT_MODEL_BOOTSTRAP_REPS`, `MCT_MODEL_BOOTSTRAP_ALPHA`,
+`MCT_MODEL_BOOTSTRAP_SEED`, or `MCT_MODEL_BOOTSTRAP_CORES` to change the
+bootstrap defaults. `vignettes/fluxnet_cwd_model_selection.Rmd` documents the
+method and provides network-wide evidence maps plus tabbed diagnostics for
+every site.
 
 ## Running locally
 

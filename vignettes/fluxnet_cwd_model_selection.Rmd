@@ -1,0 +1,729 @@
+---
+title: "Site-level models of annual CWD"
+output:
+  rmarkdown::html_document:
+    self_contained: true
+    theme: flatly
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{Site-level models of annual CWD}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+project_root <- if (file.exists("R/cwd_model_selection.R")) "." else ".."
+result_path <- file.path(
+  project_root,
+  "data",
+  "site_level",
+  "fluxnet_cwd_model_selection.rds"
+)
+has_results <- file.exists(result_path)
+
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 9,
+  fig.height = 5,
+  dpi = 110,
+  eval = has_results,
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE
+)
+
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(tricolore)
+
+if (has_results) {
+  result <- readRDS(result_path)
+  site_order <- sort(result$site_selection$sitename)
+}
+
+tricolore_hue <- 0.55
+tricolore_breaks <- 4L
+tricolore_chroma <- 1
+tricolore_lightness <- 1
+tricolore_contrast <- 0.999
+model_vertices <- data.frame(
+  energy = c(1, 0, 0),
+  storage = c(0, 1, 0),
+  recharge = c(0, 0, 1)
+)
+model_colors <- setNames(
+  Tricolore(
+    model_vertices,
+    "energy", "storage", "recharge",
+    breaks = tricolore_breaks,
+    hue = tricolore_hue,
+    chroma = tricolore_chroma,
+    lightness = tricolore_lightness,
+    contrast = tricolore_contrast,
+    legend = FALSE
+  ),
+  c("energy", "energy_storage", "energy_recharge")
+)
+decision_colors <- c(
+  favours_a = "#0072B2",
+  favours_b = "#D55E00",
+  indistinguishable = "#B8B8B8",
+  both_rejected = "#7B3294"
+)
+theme_set(
+  theme_minimal(base_size = 10) +
+    theme(
+      panel.grid.minor = element_blank(),
+      legend.position = "bottom",
+      strip.text = element_text(face = "bold"),
+      # ggtern registers these as relative theme elements; setting them here
+      # keeps ordinary ggplot2 panels valid with ggplot2 >= 4.0 as well.
+      tern.axis.ticks.length.major = rel(1),
+      tern.axis.ticks.length.minor = rel(0.5)
+    )
+)
+```
+
+```{r results-status, echo=FALSE, eval=TRUE, results='asis'}
+if (!has_results) {
+  cat(
+    "Run `Rscript analysis/02_site_level/01_fluxnet_cwd_pcwd.R` and then ",
+    "`Rscript analysis/02_site_level/02_select_cwd_models.R` before ",
+    "evaluating this vignette.\n"
+  )
+}
+```
+
+<style>
+.site-table {
+  max-height: 32rem;
+  overflow-y: auto;
+  margin-bottom: 1.25rem;
+}
+.site-table table { width: 100%; }
+.tab-content { padding-top: 1rem; }
+.model-note {
+  border-left: 4px solid #0072B2;
+  padding: 0.7rem 1rem;
+  background: #f4f8fb;
+  margin: 1rem 0;
+}
+</style>
+
+This analysis compares three deliberately compact hypotheses for interannual
+variation in the annual maximum CWD at each FLUXNET site. Each hypothesis is
+fitted to the full annual record and every pair is compared with a parametric
+bootstrap likelihood-ratio contrast. Leave-one-year-out predictions are kept
+as a complementary check on predictive skill.
+
+## Annual data used for inference
+
+The analysis unit is one site-year. For year (t):
+
+- $D_t$ is the annual maximum CWD calculated from observed ET;
+- $P_t$ is the annual maximum PCWD calculated with the site's calibrated
+  PET; and
+- $R_{t-1}$ is the maximum of the latest CWS event whose peak occurs on or
+  before the date of $D_t$.
+
+Thus, $t-1$ denotes the preceding recharge event, not necessarily the
+previous calendar year. All quantities are in millimetres. Each retained site
+has at least 10 complete annual triples.
+
+## Candidate models
+
+The three observation models are
+
+\[
+\begin{aligned}
+  A:\quad D_t &= aP_t + e_t,\\
+  B:\quad D_t &= \min(aP_t,S_0) + e_t,\\
+  C:\quad D_t &= \min(aP_t,bR_{t-1}) + e_t.
+\end{aligned}
+\]
+
+There is no additive intercept. The physical parameters satisfy
+$a\geq0$, $b\geq0$, and $S_0\geq0$. For likelihood calculation,
+$e_t\sim\mathcal N(0,\sigma_m^2)$. Every candidate is calibrated separately,
+including its own residual-error standard deviation $\sigma_m$.
+
+```{r model-definitions}
+model_table <- result$model_definitions |>
+  transmute(
+    Model = model_label,
+    `Mean structure` = model_formula,
+    `Limiting mechanisms` = mechanism_count,
+    `Mean parameters` = fitted_parameter_count
+  )
+
+knitr::kable(model_table, digits = 2)
+```
+
+Model A estimates $a$ by non-negative zero-offset least squares. Model B
+profiles the PCWD threshold corresponding to $S_0/a$, refits $a$ at every
+trial threshold, and reports the cap on the response scale as $S_0$. Model C
+profiles the ratio $b/a$ over all intervals where the limiting branch is
+unchanged and refits $a$ at every trial value; it then recovers
+$b=a(b/a)$. These profile searches give the global minimum residual sum of
+squares for the piecewise models. An unused cap is represented by infinity,
+so B or C can reduce exactly to A without assigning an arbitrary finite limit.
+
+## Pairwise parametric-bootstrap likelihood tests
+
+For a pair labelled model A and model B, the observed signed likelihood-ratio
+contrast is
+
+\[
+  T_{B-A}=2\{\ell_B(\widehat\theta_B)-
+                 \ell_A(\widehat\theta_A)\}.
+\]
+
+Positive values indicate a larger maximized likelihood for B; negative values
+indicate a larger likelihood for A. For each pair, the analysis performs two
+directional parametric-bootstrap tests:
+
+1. Fit A to all annual observations. Simulate `r result$bootstrap_replicates`
+   annual response series from its fitted means and Gaussian residual
+   distribution, refit both A and B to every series, and form
+   $T^*_{B-A}$. The right-tail probability
+   $p_A=\Pr_A(T^*_{B-A}\geq T_{B-A})$ measures evidence against A in the
+   direction of B.
+2. Repeat with B as the generating model. The left-tail probability
+   $p_B=\Pr_B(T^*_{B-A}\leq T_{B-A})$ measures evidence against B in the
+   direction of A.
+
+The predictors are held fixed in the simulations; all regression parameters,
+including $a$, $b$, $S_0$, and $\sigma_m$, are re-estimated in every
+replicate. The Monte Carlo
+p-values use the finite-simulation correction
+$(1+\text{tail count})/(1+B)$. The decision threshold is
+$\alpha=`r result$bootstrap_alpha`$.
+
+```{r model-pairs}
+pair_table <- result$model_pairs |>
+  transmute(
+    Pair = pair_label,
+    A = model_a_id,
+    B = model_b_id,
+    Structure = comparison_type
+  )
+knitr::kable(pair_table)
+```
+
+The energy model is a boundary case of both capped models: B reduces to A as
+$S_0\rightarrow\infty$, and C reduces to A as $b\rightarrow\infty$. The
+storage- and recharge-cap models are non-nested. A standard chi-squared LRT
+reference distribution is therefore not used. Calibrating the signed contrast
+under both fitted generating models puts all three pairs on the same footing
+and avoids treating either non-nested model as an arbitrary default null.
+
+The possible pairwise outcomes are:
+
+- reject A only: evidence favours B;
+- reject B only: evidence favours A;
+- reject neither: the annual record does not distinguish the pair; or
+- reject both: neither fitted generating model reproduces the observed
+  contrast, a warning about model misspecification rather than a winner.
+
+## Parsimonious selection and predictive check
+
+A model decisively favoured in a pair defeats the other member. The site-level
+selection is made among candidates that are not decisively defeated in any of
+their two comparisons. If several remain, the order is: fewest physical
+mechanisms, fewest fitted mean parameters, smallest AICc. Thus, an added limit
+is retained only when the bootstrap evidence is sufficient to remove a simpler
+candidate. The selected class summarizes this rule; the pairwise p-values and
+likelihood contrasts remain the primary evidence.
+
+Leave-one-year-out cross-validation (LOYO-CV) is also performed. For each held-
+out year, all parameters are fitted on the other years before predicting the
+annual maximum CWD. CV RMSE is not used as the formal selection gate here; it
+shows whether a full-record likelihood preference also translates into stable
+out-of-sample prediction.
+
+<div class="model-note">
+The bootstrap uses the full annual record but is conditional on the fitted
+Gaussian model and fixed PCWD/CWS predictors. It does not propagate uncertainty
+from PET calibration or the construction of annual water-balance summaries.
+With `r result$bootstrap_replicates` replicates, the smallest attainable
+Monte Carlo p-value is `r signif(1 / (result$bootstrap_replicates + 1), 3)`.
+</div>
+
+## Network-wide results
+
+```{r selection-counts, fig.width=9, fig.height=4.2}
+selection_counts <- result$site_selection |>
+  count(selected_model_id, selected_model_label, name = "sites") |>
+  right_join(
+    result$model_definitions |>
+      select(selected_model_id = model_id, selected_model_label = model_label),
+    by = c("selected_model_id", "selected_model_label")
+  ) |>
+  mutate(sites = replace_na(sites, 0L)) |>
+  arrange(sites) |>
+  mutate(
+    selected_model_label = factor(selected_model_label, levels = selected_model_label)
+  )
+
+ggplot(selection_counts, aes(sites, selected_model_label, fill = selected_model_id)) +
+  geom_col(width = 0.7) +
+  geom_text(aes(label = sites), hjust = -0.25, size = 3.2) +
+  scale_fill_manual(values = model_colors, guide = "none") +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.12))) +
+  labs(x = "Number of sites selected", y = NULL) +
+  theme(panel.grid.major.y = element_blank())
+```
+
+The next plot retains the four possible outcomes rather than forcing a winner.
+
+```{r decision-counts, fig.width=9, fig.height=5}
+decision_labels <- c(
+  favours_a = "Favours A",
+  favours_b = "Favours B",
+  indistinguishable = "No distinction",
+  both_rejected = "Both rejected"
+)
+decision_counts <- result$pairwise_tests |>
+  count(pair_label, decision_code, name = "sites") |>
+  complete(
+    pair_label = result$model_pairs$pair_label,
+    decision_code = names(decision_labels),
+    fill = list(sites = 0L)
+  ) |>
+  mutate(
+    decision = factor(
+      decision_labels[decision_code],
+      levels = unname(decision_labels)
+    )
+  )
+
+ggplot(decision_counts, aes(sites, pair_label, fill = decision_code)) +
+  geom_col(position = "stack", width = 0.7) +
+  scale_fill_manual(
+    values = decision_colors,
+    breaks = names(decision_labels),
+    labels = unname(decision_labels),
+    name = NULL
+  ) +
+  labs(x = "Number of sites", y = NULL) +
+  theme(panel.grid.major.y = element_blank())
+```
+
+The discrete color map uses LOYO-CV mean squared error to represent relative
+predictive skill. For model $m$, define
+
+\[
+  w_m = \frac{1/\mathrm{CV\text{-}MSE}_m}
+              {\sum_j 1/\mathrm{CV\text{-}MSE}_j}.
+\]
+
+The three weights lie between zero and one and sum to one. Along an edge that
+compares models X and Y, Y's conditional coordinate is
+
+\[
+  q_{Y\mid XY}=\frac{w_Y}{w_X+w_Y}
+              =\frac{\mathrm{MSE}_X}{\mathrm{MSE}_X+\mathrm{MSE}_Y}.
+\]
+
+Thus, zero favours X, one favours Y, and 0.5 represents equal predictive skill.
+These are descriptive skill weights, not posterior model probabilities. The
+bootstrap tests above continue to determine whether the observed differences
+are sufficient to distinguish models.
+
+```{r tricolore-skill-data, include=FALSE}
+skill_long <- result$model_performance |>
+  group_by(sitename) |>
+  mutate(
+    inverse_cv_mse = 1 / pmax(cv_mse_mm2, .Machine$double.eps),
+    relative_skill = inverse_cv_mse / sum(inverse_cv_mse)
+  ) |>
+  ungroup()
+
+skill_map <- skill_long |>
+  select(sitename, model_id, relative_skill) |>
+  pivot_wider(names_from = model_id, values_from = relative_skill) |>
+  left_join(
+    result$site_selection |>
+      select(sitename, selected_model_id, selected_model_label),
+    by = "sitename"
+  ) |>
+  arrange(selected_model_id, sitename)
+
+skill_tricolore <- Tricolore(
+  skill_map,
+  p1 = "energy",
+  p2 = "energy_storage",
+  p3 = "energy_recharge",
+  center = rep(1 / 3, 3),
+  breaks = tricolore_breaks,
+  hue = tricolore_hue,
+  chroma = tricolore_chroma,
+  lightness = tricolore_lightness,
+  contrast = tricolore_contrast,
+  spread = 1,
+  show_data = TRUE,
+  show_center = TRUE,
+  label_as = "pct",
+  crop = FALSE
+)
+skill_map$skill_rgb <- skill_tricolore$rgb
+rgb_channels <- t(grDevices::col2rgb(skill_map$skill_rgb)) / 255
+skill_map$text_color <- ifelse(
+  0.2126 * rgb_channels[, 1] +
+    0.7152 * rgb_channels[, 2] +
+    0.0722 * rgb_channels[, 3] > 0.58,
+  "#1A1A1A",
+  "white"
+)
+skill_map <- skill_map |>
+  mutate(
+    tile_index = row_number() - 1L,
+    tile_column = tile_index %% 6L + 1L,
+    tile_row = tile_index %/% 6L + 1L
+  )
+```
+
+```{r tricolore-skill-map, fig.width=10, fig.height=7}
+ggplot(
+  skill_map,
+  aes(tile_column, -tile_row, fill = skill_rgb)
+) +
+  geom_tile(color = "white", linewidth = 1.2, width = 0.98, height = 0.98) +
+  geom_text(
+    aes(label = sitename, color = text_color),
+    fontface = "bold",
+    size = 3.2
+  ) +
+  scale_fill_identity() +
+  scale_color_identity() +
+  coord_equal(expand = FALSE) +
+  labs(
+    title = "Relative out-of-sample skill of the three annual CWD models",
+    subtitle = paste(
+      "Discrete tricolore scale with four margins per axis;",
+      "sites ordered by selected model"
+    ),
+    caption = paste(
+      "Energy axis: cyan; storage-cap axis: magenta;",
+      "recharge-cap axis: yellow; equal-skill centre: black"
+    )
+  ) +
+  theme_void(base_size = 10) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(color = "grey30"),
+    plot.caption = element_text(color = "grey35")
+  )
+```
+
+The triangle uses the same discrete `{tricolore}` scale with four margins
+along every axis. Maximum chroma and tip lightness give saturated cyan,
+magenta, and yellow vertices, while maximum contrast keeps the equal-skill
+center black. White points with black outlines and directly connected labels
+keep individual sites visible across both light and dark cells.
+
+```{r tricolore-skill-key, fig.width=10, fig.height=9}
+ternary_xy <- function(p1, p2, p3) {
+  data.frame(
+    x = p3 + 0.5 * p2,
+    y = sqrt(3) / 2 * p2
+  )
+}
+
+ternary_mesh <- function(k) {
+  triangles <- vector("list", k^2)
+  cell <- 0L
+  for (p1_integer in 0:(k - 1L)) {
+    for (p2_integer in 0:(k - 1L - p1_integer)) {
+      p3_integer <- k - p1_integer - p2_integer
+      cell <- cell + 1L
+      triangles[[cell]] <- data.frame(
+        cell = cell,
+        vertex = 1:3,
+        p1 = c(p1_integer, p1_integer + 1L, p1_integer) / k,
+        p2 = c(p2_integer, p2_integer, p2_integer + 1L) / k,
+        p3 = c(p3_integer, p3_integer - 1L, p3_integer - 1L) / k
+      )
+      if (p3_integer >= 2L) {
+        cell <- cell + 1L
+        triangles[[cell]] <- data.frame(
+          cell = cell,
+          vertex = 1:3,
+          p1 = c(p1_integer + 1L, p1_integer + 1L, p1_integer) / k,
+          p2 = c(p2_integer, p2_integer + 1L, p2_integer + 1L) / k,
+          p3 = c(p3_integer - 1L, p3_integer - 2L, p3_integer - 1L) / k
+        )
+      }
+    }
+  }
+  bind_rows(triangles[seq_len(cell)])
+}
+
+key_mesh <- ternary_mesh(tricolore_breaks)
+key_centers <- key_mesh |>
+  group_by(cell) |>
+  summarise(
+    p1 = mean(p1),
+    p2 = mean(p2),
+    p3 = mean(p3),
+    .groups = "drop"
+  )
+key_centers$cell_color <- Tricolore(
+  key_centers,
+  "p1", "p2", "p3",
+  center = rep(1 / 3, 3),
+  breaks = tricolore_breaks,
+  hue = tricolore_hue,
+  chroma = tricolore_chroma,
+  lightness = tricolore_lightness,
+  contrast = tricolore_contrast,
+  spread = 1,
+  legend = FALSE
+)
+key_mesh <- key_mesh |>
+  left_join(select(key_centers, cell, cell_color), by = "cell")
+key_mesh <- bind_cols(
+  key_mesh,
+  ternary_xy(key_mesh$p1, key_mesh$p2, key_mesh$p3)
+)
+
+key_points <- bind_cols(
+  skill_map,
+  ternary_xy(skill_map$energy, skill_map$energy_storage,
+             skill_map$energy_recharge)
+)
+
+grid_values <- c(0.25, 0.5, 0.75)
+key_grid <- bind_rows(lapply(grid_values, function(value) {
+  bind_rows(
+    data.frame(axis = "energy", value, endpoint = 1:2,
+               p1 = value, p2 = c(0, 1 - value),
+               p3 = c(1 - value, 0)),
+    data.frame(axis = "storage", value, endpoint = 1:2,
+               p1 = c(0, 1 - value), p2 = value,
+               p3 = c(1 - value, 0)),
+    data.frame(axis = "recharge", value, endpoint = 1:2,
+               p1 = c(0, 1 - value), p2 = c(1 - value, 0),
+               p3 = value)
+  )
+})) |>
+  group_by(axis, value) |>
+  mutate(
+    x = ternary_xy(p1, p2, p3)$x,
+    y = ternary_xy(p1, p2, p3)$y,
+    xend = rev(x),
+    yend = rev(y)
+  ) |>
+  slice(1) |>
+  ungroup()
+
+ggplot(key_mesh, aes(x, y, group = cell, fill = cell_color)) +
+  geom_polygon(color = NA) +
+  geom_segment(
+    data = key_grid,
+    aes(x = x, y = y, xend = xend, yend = yend),
+    inherit.aes = FALSE,
+    linewidth = 0.35,
+    color = scales::alpha("black", 0.55)
+  ) +
+  geom_polygon(fill = NA, color = "black", linewidth = 0.8) +
+  geom_point(
+    data = key_points,
+    aes(x, y),
+    inherit.aes = FALSE,
+    shape = 21,
+    size = 4.2,
+    stroke = 1,
+    fill = "white",
+    color = "black"
+  ) +
+  ggrepel::geom_label_repel(
+    data = key_points,
+    aes(x, y, label = sitename),
+    inherit.aes = FALSE,
+    seed = 42,
+    size = 2.4,
+    fontface = "bold",
+    color = "black",
+    fill = scales::alpha("white", 0.9),
+    box.padding = 0.18,
+    point.padding = 0.22,
+    min.segment.length = 0,
+    max.overlaps = Inf,
+    max.iter = 50000,
+    max.time = 5,
+    linewidth = 0.2,
+    segment.color = "grey20",
+    segment.size = 0.25
+  ) +
+  annotate("text", x = -0.03, y = -0.035, label = "Energy A",
+           hjust = 1, fontface = "bold") +
+  annotate("text", x = 0.5, y = sqrt(3) / 2 + 0.045,
+           label = "Storage cap B", fontface = "bold") +
+  annotate("text", x = 1.03, y = -0.035, label = "Recharge cap C",
+           hjust = 0, fontface = "bold") +
+  scale_fill_identity() +
+  coord_equal(xlim = c(-0.12, 1.12), ylim = c(-0.07, 0.96), clip = "off") +
+  labs(
+    title = "Relative out-of-sample skill by site",
+    subtitle = "Labels are displaced for legibility; leader lines identify the site points"
+  ) +
+  theme_void(base_size = 10) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(color = "grey30"),
+    plot.margin = margin(8, 24, 8, 24)
+  )
+```
+
+## Site overview
+
+```{r site-overview, results='asis'}
+site_overview <- result$site_selection |>
+  left_join(
+    result$site_metadata |>
+      select(sitename, igbp_land_use, koeppen_code),
+    by = "sitename"
+  ) |>
+  left_join(
+    skill_map |>
+      select(sitename, energy, energy_storage, energy_recharge),
+    by = "sitename"
+  ) |>
+  transmute(
+    Site = sitename,
+    IGBP = igbp_land_use,
+    Climate = koeppen_code,
+    Years = n_years,
+    Selected = selected_model_label,
+    `Relative skill A` = energy,
+    `Relative skill B` = energy_storage,
+    `Relative skill C` = energy_recharge,
+    `Decisive pairs` = n_decisive_pairs,
+    `Indistinguishable pairs` = n_indistinguishable_pairs,
+    `Both rejected` = n_both_rejected_pairs,
+    `Selected CV RMSE (mm)` = selected_cv_rmse_mm,
+    `Best-CV model` = empirically_best_model_label,
+    `Energy scale a` = ifelse(
+      is.finite(selected_energy_scale_a), selected_energy_scale_a, NA
+    ),
+    `Recharge scale b` = ifelse(
+      is.finite(selected_recharge_scale_b), selected_recharge_scale_b, NA
+    ),
+    `S0 (mm)` = ifelse(
+      selected_s0_identifiable & is.finite(selected_s0_mm),
+      selected_s0_mm,
+      NA
+    ),
+    `Residual sigma (mm)` = selected_error_sigma_ml_mm
+  )
+
+cat('<div class="site-table">\n')
+cat(knitr::kable(site_overview, format = "html", digits = 1))
+cat("\n</div>\n")
+```
+
+## Per-site diagnostics {.tabset .tabset-pills}
+
+Each tab shows only the held-out prediction diagnostic for one site. Observed
+CWD is on the y-axis, and the subtitle reports the out-of-sample $R^2$ from
+leave-one-year-out cross-validation,
+$R^2_{\mathrm{CV}}=1-\sum_t(D_t-\widehat D_{t,-t})^2/
+\sum_t(D_t-\overline D)^2$. Because every prediction is held out, this value
+can be negative when the selected model predicts less well than the observed
+site mean.
+
+```{r site-tabs, results='asis', fig.width=9.5, fig.height=6.5}
+for (site in site_order) {
+  site_selection <- result$site_selection |>
+    filter(sitename == site)
+  selected_cv_prediction <- result$cv_predictions |>
+    filter(
+      sitename == site,
+      model_id == site_selection$selected_model_id
+    )
+  observed <- selected_cv_prediction$observed_cwd_mm
+  predicted <- selected_cv_prediction$predicted_cwd_mm
+  total_sum_squares <- sum((observed - mean(observed))^2)
+  cv_r_squared <- if (total_sum_squares > 0) {
+    1 - sum((observed - predicted)^2) / total_sum_squares
+  } else {
+    NA_real_
+  }
+  r_squared_text <- if (is.finite(cv_r_squared)) {
+    sprintf("%.2f", cv_r_squared)
+  } else {
+    "not defined"
+  }
+
+  cat("\n### ", site, "\n\n", sep = "")
+  plot_limit <- max(
+    observed,
+    predicted,
+    0
+  )
+  plot_minimum <- min(
+    observed,
+    predicted,
+    0
+  )
+  fit_plot <- ggplot(
+    selected_cv_prediction,
+    aes(predicted_cwd_mm, observed_cwd_mm, color = year)
+  ) +
+    geom_abline(
+      slope = 1,
+      intercept = 0,
+      linetype = "dotted",
+      linewidth = 0.7,
+      color = "grey35"
+    ) +
+    geom_point(size = 2.8) +
+    scale_color_viridis_c(
+      option = "D",
+      end = 0.9,
+      breaks = range(selected_cv_prediction$year),
+      labels = range(selected_cv_prediction$year),
+      guide = guide_colorbar(barwidth = 9)
+    ) +
+    coord_equal(
+      xlim = c(plot_minimum, plot_limit),
+      ylim = c(plot_minimum, plot_limit)
+    ) +
+    labs(
+      title = paste(site, site_selection$selected_model_label),
+      subtitle = sprintf(
+        "LOYO-CV R² = %s; RMSE = %.1f mm",
+        r_squared_text,
+        site_selection$selected_cv_rmse_mm
+      ),
+      x = "Held-out selected-model prediction (mm)",
+      y = "Observed annual maximum CWD (mm)",
+      color = "Year",
+      caption = "Dotted line: 1:1; every plotted prediction is out of sample"
+    )
+  print(fit_plot)
+  cat("\n\n")
+}
+```
+
+## Interpretation guardrails
+
+The pairwise results measure relative support among these three observation
+models; they do not establish a unique causal mechanism. A recharge cap cannot
+be identified when preceding CWS nearly always exceeds PCWD. A storage cap is
+weakly identified when few annual PCWD values bracket its fitted threshold.
+Because the models have no intercept, systematic proportional or additive
+discrepancies must appear in $a$, $b$, $S_0$, or the residuals. A scale at zero
+means there is no positive fitted relationship and should not be interpreted
+mechanistically. An infinite fitted opposing scale denotes an inactive,
+unidentified cap rather than an extremely large estimated physical parameter.
+
+The bootstrap treats annual residuals as independent and Gaussian. Serial
+dependence, uncertainty in CWD/PCWD/CWS, and selection among many sites are not
+included in the reported p-values. “No supported distinction” is therefore an
+appropriate substantive result for short records, not evidence that the two
+models are identical.
