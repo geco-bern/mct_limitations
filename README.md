@@ -2,15 +2,15 @@
 
 *Benjamin D. Stocker*
 
-This repository contains the global gridded workflow for deriving annual
-maximum cumulative water deficit (CWD) and the maximum cumulative water surplus
-that precedes each annual CWD maximum. The repository name refers to the Mass
-Curve Technique used by [Gao et al. (2014)](https://doi.org/10.1002/2014GL061668).
-The code is licensed under GPL-3.
+This repository contains site-level and global workflows for cumulative water
+deficit (CWD), cumulative water surplus (CWS), and potential cumulative water
+deficit (PCWD). The repository name refers to the Mass Curve Technique used by
+[Gao et al. (2014)](https://doi.org/10.1002/2014GL061668). The code is licensed
+under GPL-3.
 
-The active analysis no longer fits extreme-value distributions, derives return
-levels or return periods, converts CWD to rooting depth, evaluates sites, or
-analyses SIF- and evaporative-fraction thresholds.
+The active analysis does not fit extreme-value distributions, derive return
+levels or return periods, convert CWD to rooting depth, or analyse SIF and
+evaporative-fraction thresholds.
 
 ## Repository layout
 
@@ -20,14 +20,14 @@ analyses SIF- and evaporative-fraction thresholds.
 - `data-raw/` contains small grid definitions kept with the project.
 - `data/`, `fig/`, and `logs/` contain generated outputs and are ignored by
   Git.
-- `vignettes/` contains a synthetic workflow demonstration and the UBELIX
+- `vignettes/` contains synthetic and FLUXNET demonstrations plus the UBELIX
   submission guide.
 - `src/ubelix/` contains the Slurm job registry and submission scripts.
 - `tests/` contains focused workflow tests.
 
 ## Software setup
 
-Use R 4.1 or newer and run commands from the directory containing
+Use R 4.2 or newer and run commands from the directory containing
 `mct.Rproj`. Dependencies are recorded in `DESCRIPTION`. A typical setup is:
 
 ```r
@@ -69,11 +69,66 @@ MCT_INPUT_CONFIG=config/input_sources_alternative.R \
 | Stage | Purpose | Main checkpoint |
 |---|---|---|
 | `01_tidy_inputs` | Convert configured NetCDF inputs to nested tidy longitude slices with `map2tidy` | configured tidy-cache `.rds` files |
+| `02_site_level` | Derive daily FLUXNET CWD, CWS, calibrated site PET, and PCWD | `data/site_level/fluxnet_cwd_cws_pcwd.rds` |
 | `03_water_balance` | Convert ET, partition and melt snow, and calculate daily liquid input minus ET | `data/df_bal/df_bal_ilon_*.rds` |
 | `04_annual_cwd` | Calculate annual maximum CWD and preceding maximum surplus for every grid cell | `data/df_cwd_annual/df_cwd_annual_ilon_*.rds` |
 | `10_results` | Plot annual maximum CWD against preceding maximum surplus | `fig/cwd_vs_preceding_surplus.*` |
 
 See `analysis/README.md` for the script order.
+
+## FLUXNET site-level analysis
+
+Run the site-level workflow with:
+
+```sh
+Rscript analysis/02_site_level/01_fluxnet_cwd_pcwd.R
+```
+
+By default it reads
+`~/data_2/FluxDataKit/v3.4/zenodo_upload/rsofun_driver_data_v3.4.2.rds`
+and the two FluxDataKit site tables beside it. It applies the ecosystem and
+data-quality exclusions used to construct `sites_train` in `eval_rsofun_et`.
+It then includes each eligible site's longest sequence of at least 10
+consecutive complete GPP and LE years. Set `MCT_MIN_SITE_YEARS` to a positive
+integer to change that threshold.
+
+The uncorrected latent heat variable (`le`, FLUXNET `LE_F_MDS`) in the rsofun
+driver is converted from W m-2 to ET in mm d-1. Total precipitation is converted
+from mm s-1 to mm d-1, partitioned into rain and snow, and passed through
+`cwd::simulate_snow()`. Daily CWD and CWS are then calculated with
+`cwd::cwd(do_surplus = TRUE)` without calendar resetting. Non-positive source
+pressure values are treated as invalid and linearly interpolated within site.
+
+Before each CWD/CWS or PCWD call, a copy of the site's first year is prepended
+as spin-up. The copied year is removed from the returned daily series after
+`cwd::cwd()` has run, as are the disposable tail-guard rows.
+
+Priestley-Taylor PET is calculated with `cwd::pet()`. Missing net radiation is
+filled by five-nearest-neighbour prediction from temperature and PPFD, following
+the FluxDataKit processing approach; each daily value retains an `observed` or
+`knn_imputed` source flag. For each site, valid days are divided into five
+equal-width CWD bins. The initial PET scalar is the ratio of median observed ET
+to median Priestley--Taylor PET in the lowest-CWD bin. Bins 2--5 are then
+inspected sequentially. Whenever median observed ET exceeds median scaled PET in
+bin *i*, the scalar is recalibrated by median matching over all observations in
+bins 1 through *i*. Thus calibration can expand to the full site record when no
+water-limitation signal is apparent. Set `MCT_CWD_BIN_COUNT` to a positive
+integer to change the number of bins. Calibration uses days with LE QC at least
+0.8, positive PT-PET, and non-negative observed ET. Negative PT-PET values
+arising from negative daily net radiation are retained, as in the referenced
+`cwd` implementation, but are not used to calibrate the site scalar.
+
+PCWD uses the fitted site PET. Its annual reset is the first day of the site's
+climatologically wettest potential-water-balance month. CWD has no calendar
+reset. The RDS checkpoint contains the daily and annual data, per-site
+correlations, site diagnostics, CWD-bin summaries, and monthly balances. A
+compact site summary is also written to
+`data/site_level/fluxnet_site_summary.csv`.
+
+`vignettes/fluxnet_site_diagnostics.Rmd` displays the calibrated ET--PET
+relationships, PET/scaled-PET/ET distributions by CWD bin, and full-record
+daily CWD/PCWD/CWS series in nested plot tabs within one tab per site, alongside
+network-wide PET-scalar and annual-correlation overviews.
 
 ## Running locally
 

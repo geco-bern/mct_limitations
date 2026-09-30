@@ -2,7 +2,8 @@
 
 Run scripts from the project root. The retained workflow contains only the
 global gridded calculations needed to derive annual maximum cumulative water
-deficit (CWD) and its preceding maximum cumulative surplus.
+deficit (CWD) and its preceding maximum cumulative surplus, plus a separate
+FLUXNET site-level exploration.
 
 ## 01 — Tidy climate inputs
 
@@ -12,6 +13,32 @@ deficit (CWD) and its preceding maximum cumulative surplus.
 
 These scripts call the shared `map2tidy` adapter and write restartable
 longitude-slice files with outer `lon`, `lat`, and nested `data` columns.
+
+## 02 — FLUXNET site-level CWD, CWS, and PCWD
+
+`02_site_level/01_fluxnet_cwd_pcwd.R` applies the `eval_rsofun_et` eligibility
+rules and selects each site's longest sequence of at least 10 consecutive
+complete GPP and LE years. It converts the uncorrected latent heat variable
+(`le`, FLUXNET `LE_F_MDS`) and precipitation to daily water fluxes, simulates
+snow, and calculates daily CWD/CWS without calendar resetting. Valid calibration
+days are divided into equal-width CWD bins; the site PET scalar is the ratio of
+median observed ET to median Priestley--Taylor PET, initially in the lowest-CWD
+bin. Bins 2--5 are checked sequentially. If scaled PET underpredicts median ET
+in bin *i*, the scalar is recalibrated by median matching across all data in
+bins 1 through *i*. PCWD uses that final scaled PET and resets at the start of
+the climatologically wettest month. Missing net radiation is KNN-imputed from
+temperature and PPFD and explicitly flagged. Invalid non-positive atmospheric
+pressure values are interpolated within site and flagged separately. Set
+`MCT_MIN_SITE_YEARS` to change the default record-length threshold and
+`MCT_CWD_BIN_COUNT` to change the default five bins.
+
+The output `data/site_level/fluxnet_cwd_cws_pcwd.rds` contains daily series,
+site summaries, CWD-bin calibration summaries, and monthly balances used to
+choose PCWD reset dates.
+
+`../vignettes/fluxnet_site_diagnostics.Rmd` provides network-wide summaries
+and nested plot tabs for calibrated ET--PET, flux distributions by CWD bin, and
+daily CWD/PCWD/CWS diagnostics within each site tab.
 
 ## 03 — Daily water balance
 

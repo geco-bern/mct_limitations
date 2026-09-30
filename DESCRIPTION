@@ -12,6 +12,7 @@ Depends:
 Imports:
     cwd (>= 3.0.1),
     dplyr,
+    FNN,
     ggplot2,
     here,
     lubridate,

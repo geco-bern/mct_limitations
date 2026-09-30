@@ -54,7 +54,11 @@ test_that("only the retained workflow vignettes remain", {
 
   expect_setequal(
     vignette_files,
-    c("core_workflow_synthetic.Rmd", "ubelix_workflow.Rmd")
+    c(
+      "core_workflow_synthetic.Rmd",
+      "fluxnet_site_diagnostics.Rmd",
+      "ubelix_workflow.Rmd"
+    )
   )
 })
 
@@ -70,6 +74,7 @@ test_that("R contains only helpers used by the retained workflow", {
     "map_netcdf_to_tidy.R",
     "simulate_snow.R",
     "simulate_snow_byilon.R",
+    "site_level_cwd.R",
     "workflow_helpers.R"
   )
 

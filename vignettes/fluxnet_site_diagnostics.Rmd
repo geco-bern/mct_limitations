@@ -1,0 +1,435 @@
+---
+title: "FLUXNET site-level CWD, CWS, and PCWD diagnostics"
+output:
+  rmarkdown::html_document:
+    self_contained: true
+    theme: flatly
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{FLUXNET site-level CWD, CWS, and PCWD diagnostics}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+project_root <- if (file.exists("R/site_level_cwd.R")) "." else ".."
+result_path <- file.path(
+  project_root,
+  "data",
+  "site_level",
+  "fluxnet_cwd_cws_pcwd.rds"
+)
+has_results <- file.exists(result_path)
+
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 9,
+  fig.height = 5,
+  dpi = 110,
+  eval = has_results,
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE
+)
+
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+
+if (has_results) {
+  result <- readRDS(result_path)
+  site_order <- sort(result$site_summary$sitename)
+}
+
+theme_set(
+  theme_minimal(base_size = 10) +
+    theme(
+      panel.grid.minor = element_blank(),
+      legend.position = "bottom",
+      strip.text = element_text(face = "bold")
+    )
+)
+```
+
+```{r results-status, echo=FALSE, eval=TRUE, results='asis'}
+if (!has_results) {
+  cat(
+    "Run `Rscript analysis/02_site_level/01_fluxnet_cwd_pcwd.R` ",
+    "before evaluating the figures in this vignette.\n"
+  )
+}
+```
+
+<style>
+.site-table {
+  max-height: 32rem;
+  overflow-y: auto;
+  margin-bottom: 1.25rem;
+}
+.site-table table {
+  width: 100%;
+}
+.tab-content {
+  padding-top: 1rem;
+}
+</style>
+
+This vignette presents all FLUXNET sites that pass the ecosystem and data-quality
+filters used by the source workflow and have at least 10 consecutive complete
+years within the joint GPP/LE record. The network-wide figures summarize the
+calibrated PET scalars and the annual relationships. Each site tab contains
+separate plot tabs for the ET--PET calibration, CWD-bin distributions, and the
+full-record daily CWD, PCWD, and CWS series.
+
+The uncorrected latent heat variable (`le`, FLUXNET `LE_F_MDS`) is converted to
+observed ET in millimetres. At each site, valid observed ET and
+Priestley--Taylor PET days are divided into equal-width CWD bins. The initial
+scalar is defined by the lowest-CWD bin as
+
+\[
+  \alpha_{site} =
+  \frac{\operatorname{median}(\mathrm{ET}_{obs})}
+       {\operatorname{median}(\mathrm{PET}_{PT})},
+  \qquad
+  \mathrm{PET}_{site} = \alpha_{site}\,\mathrm{PET}_{PT}.
+\]
+
+Bins 2 through 5 are then inspected sequentially. Whenever median observed ET
+is greater than median scaled PET in bin (i), the scalar is recalculated as
+
+\[
+  \alpha_i =
+  \frac{\operatorname{median}(\mathrm{ET}_{obs}\mid b \le i)}
+       {\operatorname{median}(\mathrm{PET}_{PT}\mid b \le i)}.
+\]
+
+The final scalar therefore median-matches all observations from bin 1 through
+the last bin that triggered a refit. In the limiting case this includes all
+bins. The default is five bins and can be changed with `MCT_CWD_BIN_COUNT`. The
+bins have equal width over each site's observed CWD range. Calibration days have
+`LE_QC >= 0.8`, positive PT-PET, and non-negative observed ET. The copied
+first-year spin-up used for CWD, CWS, and PCWD has already been removed from all
+returned daily series. CWD is not reset on a calendar date. PCWD is reset on the
+first day of the climatologically wettest potential-water-balance month.
+
+## Site overview
+
+```{r site-summary, results='asis'}
+site_summary <- result$site_summary |>
+  select(
+    sitename,
+    koeppen_code,
+    igbp_land_use,
+    year_start,
+    year_end,
+    nyears_overlap,
+    cwd_bins_actual,
+    pet_calibration_max_cwd_bin,
+    n_pet_scalar_refits,
+    pet_scalar,
+    pet_calibration_cwd_min_mm,
+    pet_calibration_cwd_max_mm,
+    n_pet_calibration
+  ) |>
+  arrange(sitename)
+
+cat('<div class="site-table">\n')
+cat(
+  knitr::kable(
+    site_summary,
+    format = "html",
+    digits = 3,
+    col.names = c(
+      "Site", "Köppen", "IGBP", "Start", "End", "Years",
+      "CWD bins", "Final calibration bin", "Sequential refits", "PET scalar",
+      "Calibration CWD min (mm)",
+      "Calibration CWD max (mm)", "Calibration n"
+    )
+  )
+)
+cat("\n</div>\n")
+```
+
+## Calibrated PET scalars across all sites
+
+```{r pet-scalars, fig.width=9, fig.height=10}
+scalar_overview <- result$site_summary |>
+  arrange(pet_scalar) |>
+  mutate(sitename = factor(sitename, levels = sitename))
+
+ggplot(scalar_overview, aes(pet_scalar, sitename)) +
+  geom_segment(
+    aes(x = 0, xend = pet_scalar, yend = sitename),
+    linewidth = 0.45,
+    color = "#8AB6D6"
+  ) +
+  geom_point(size = 2.1, color = "#0072B2") +
+  geom_text(
+    aes(label = sprintf("%.2f", pet_scalar)),
+    hjust = -0.25,
+    size = 2.5,
+    color = "grey20"
+  ) +
+  coord_cartesian(
+    xlim = c(0, max(scalar_overview$pet_scalar, na.rm = TRUE) * 1.12)
+  ) +
+  labs(
+    x = "Site-specific median-calibrated PET scalar",
+    y = NULL
+  ) +
+  theme(panel.grid.major.y = element_blank())
+```
+
+## Per-site annual correlations
+
+For every site, the blue coefficient is the Pearson correlation between annual
+maximum CWD as the response and annual maximum PCWD as the predictor. The green
+coefficient instead uses preceding CWS as the predictor. Preceding CWS is the
+maximum of the latest CWS event whose maximum occurs on or before the date of
+annual maximum CWD.
+
+```{r annual-correlations, fig.width=9, fig.height=10}
+correlation_sites <- result$site_correlations |>
+  arrange(correlation_cwd_pcwd) |>
+  mutate(sitename = factor(sitename, levels = sitename))
+
+correlation_long <- correlation_sites |>
+  pivot_longer(
+    c(correlation_cwd_pcwd, correlation_cwd_preceding_cws),
+    names_to = "relationship",
+    values_to = "correlation"
+  ) |>
+  mutate(
+    relationship = recode(
+      relationship,
+      correlation_cwd_pcwd = "Annual maximum CWD ~ annual maximum PCWD",
+      correlation_cwd_preceding_cws = "Annual maximum CWD ~ preceding CWS"
+    )
+  )
+
+ggplot(correlation_long, aes(correlation, sitename, color = relationship)) +
+  geom_vline(xintercept = 0, linewidth = 0.5, color = "grey45") +
+  geom_segment(
+    data = correlation_sites,
+    aes(
+      x = correlation_cwd_pcwd,
+      xend = correlation_cwd_preceding_cws,
+      y = sitename,
+      yend = sitename
+    ),
+    inherit.aes = FALSE,
+    linewidth = 0.45,
+    color = "grey75"
+  ) +
+  geom_point(size = 2.2, alpha = 0.95) +
+  scale_color_manual(
+    values = c(
+      "Annual maximum CWD ~ annual maximum PCWD" = "#0072B2",
+      "Annual maximum CWD ~ preceding CWS" = "#009E73"
+    )
+  ) +
+  scale_x_continuous(limits = c(-1, 1), breaks = seq(-1, 1, by = 0.25)) +
+  labs(
+    x = "Within-site Pearson correlation (r)",
+    y = NULL,
+    color = NULL
+  ) +
+  theme(panel.grid.major.y = element_blank())
+```
+
+## Per-site diagnostics {.tabset .tabset-pills}
+
+Choose a site and then a nested plot tab to inspect its CWD-binned ET--PET
+calibration, the corresponding within-bin flux distributions, or the complete
+daily time series. These nested R Markdown tabsets provide the same folded
+per-site organization as Quarto panel tabsets while retaining an installable
+R-package vignette. The three cumulative water variables are overlaid in one
+horizontally extended panel so that their timing can be compared directly.
+
+```{r site-tabs, results='asis', fig.width=10.5, fig.height=4.2}
+for (site in site_order) {
+  site_meta <- result$site_summary |>
+    filter(sitename == site)
+  site_daily <- result$daily |>
+    filter(sitename == site)
+  calibration_bias_display <- ifelse(
+    abs(site_meta$pet_calibration_median_bias_mm) < sqrt(.Machine$double.eps),
+    0,
+    site_meta$pet_calibration_median_bias_mm
+  )
+
+  cat("\n### ", site, " {.tabset}\n\n", sep = "")
+  cat("#### Observed ET versus Priestley--Taylor PET\n\n")
+
+  et_pet <- site_daily |>
+    filter(
+      is.finite(pet_pt_mm),
+      is.finite(et_obs_mm),
+      pet_pt_mm > 0,
+      et_obs_mm >= 0,
+      le_qc >= 0.8
+    )
+
+  bin_summary <- result$cwd_bin_summaries |>
+    filter(sitename == site) |>
+    mutate(
+      cwd_bin = factor(cwd_bin),
+      calibration_bin = as.integer(as.character(cwd_bin)) <=
+        site_meta$pet_calibration_max_cwd_bin
+    )
+
+  et_pet_plot <- ggplot(et_pet, aes(pet_pt_mm, et_obs_mm)) +
+    geom_point(color = "grey65", size = 0.5, alpha = 0.24) +
+    geom_point(
+      data = bin_summary,
+      aes(median_pet_pt_mm, median_et_obs_mm, color = cwd_bin),
+      inherit.aes = FALSE,
+      size = 3
+    ) +
+    geom_point(
+      data = filter(bin_summary, calibration_bin),
+      aes(median_pet_pt_mm, median_et_obs_mm),
+      inherit.aes = FALSE,
+      shape = 21,
+      size = 5,
+      stroke = 1,
+      fill = NA,
+      color = "black"
+    ) +
+    geom_abline(
+      slope = 1,
+      intercept = 0,
+      linewidth = 0.75,
+      linetype = "dotted",
+      color = "grey35"
+    ) +
+    geom_abline(
+      slope = site_meta$pet_scalar,
+      intercept = 0,
+      linewidth = 0.85,
+      color = "black"
+    ) +
+    labs(
+      title = site,
+      subtitle = sprintf(
+        paste0(
+          "scalar = %.3f; pooled bins 1--%d; refits = %d; ",
+          "pooled median bias = %.2g mm d-1; n = %d"
+        ),
+        site_meta$pet_scalar,
+        site_meta$pet_calibration_max_cwd_bin,
+        site_meta$n_pet_scalar_refits,
+        calibration_bias_display,
+        site_meta$n_pet_calibration
+      ),
+      x = expression("Priestley-Taylor PET"~("mm d"^{-1})),
+      y = expression("Observed ET"~("mm d"^{-1})),
+      color = "CWD bin",
+      caption = paste(
+        "Outlined medians: bins used for final calibration;",
+        "dotted: 1:1; solid: final calibrated PET scalar"
+      )
+    ) +
+    guides(color = guide_legend(override.aes = list(size = 3, alpha = 1)))
+  print(et_pet_plot)
+
+  cat("\n\n#### Flux distributions by CWD bin\n\n")
+
+  flux_by_bin <- site_daily |>
+    filter(
+      !is.na(cwd_bin),
+      is.finite(pet_pt_mm),
+      is.finite(pet_site_mm),
+      is.finite(et_obs_mm)
+    ) |>
+    transmute(
+      cwd_bin = factor(cwd_bin),
+      PET = pet_pt_mm,
+      `x × PET` = pet_site_mm,
+      `Observed ET` = et_obs_mm
+    ) |>
+    pivot_longer(
+      c(PET, `x × PET`, `Observed ET`),
+      names_to = "flux",
+      values_to = "mm_day"
+    ) |>
+    mutate(
+      flux = factor(flux, levels = c("PET", "x × PET", "Observed ET"))
+    )
+
+  flux_boxplot <- ggplot(
+    flux_by_bin,
+    aes(cwd_bin, mm_day, fill = flux)
+  ) +
+    geom_boxplot(
+      position = position_dodge2(width = 0.8, preserve = "single"),
+      width = 0.7,
+      linewidth = 0.3,
+      outlier.size = 0.35,
+      outlier.alpha = 0.18
+    ) +
+    scale_fill_manual(
+      values = c(
+        PET = "#56B4E9",
+        `x × PET` = "#D55E00",
+        `Observed ET` = "#009E73"
+      )
+    ) +
+    labs(
+      title = paste(site, "flux distributions by CWD bin"),
+      subtitle = sprintf(
+        "Equal-width bins; final scalar calibrated through bin %d (%d sequential refits)",
+        site_meta$pet_calibration_max_cwd_bin,
+        site_meta$n_pet_scalar_refits
+      ),
+      x = "CWD bin (lowest to highest deficit)",
+      y = expression("Daily water flux"~("mm d"^{-1})),
+      fill = NULL
+    ) +
+    theme(plot.margin = margin(t = 12, r = 5.5, b = 5.5, l = 5.5))
+  print(flux_boxplot)
+
+  cat("\n\n#### Daily CWD, PCWD, and CWS\n\n")
+
+  daily_long <- site_daily |>
+    select(date, cwd_mm, pcwd_mm, cws_mm) |>
+    pivot_longer(
+      c(cwd_mm, pcwd_mm, cws_mm),
+      names_to = "quantity",
+      values_to = "mm"
+    ) |>
+    mutate(
+      quantity = recode(
+        quantity,
+        cwd_mm = "CWD",
+        pcwd_mm = "PCWD",
+        cws_mm = "CWS"
+      ),
+      quantity = factor(quantity, levels = c("CWS", "PCWD", "CWD"))
+    )
+
+  time_series_plot <- ggplot(daily_long, aes(date, mm, color = quantity)) +
+    geom_line(linewidth = 0.27, alpha = 0.9) +
+    scale_color_manual(
+      values = c(CWD = "#0072B2", PCWD = "#D55E00", CWS = "#009E73"),
+      breaks = c("CWD", "PCWD", "CWS")
+    ) +
+    labs(
+      title = paste(site, "daily water-balance diagnostics"),
+      subtitle = sprintf(
+        "%d--%d (%d complete years)",
+        site_meta$year_start,
+        site_meta$year_end,
+        site_meta$nyears_overlap
+      ),
+      x = NULL,
+      y = "Cumulative water amount (mm)",
+      color = NULL
+    )
+  print(time_series_plot)
+
+  cat("\n\n")
+}
+```
