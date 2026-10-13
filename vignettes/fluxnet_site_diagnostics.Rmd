@@ -74,27 +74,14 @@ if (!has_results) {
 .tab-content {
   padding-top: 1rem;
 }
-.site-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin: 0.75rem 0 1.25rem 0;
-}
-.site-links a {
-  border: 1px solid #d3dce4;
-  border-radius: 0.35rem;
-  padding: 0.25rem 0.5rem;
-  background: #f8fafb;
-  text-decoration: none;
-}
 </style>
 
 This vignette presents all FLUXNET sites that pass the ecosystem and data-quality
 filters used by the source workflow and have at least 10 consecutive complete
 years within the joint GPP/LE record. The network-wide figures summarize the
 calibrated PET scalars and the annual relationships. Each site tab contains
-separate plot tabs for the ET--PET calibration, CWD-bin distributions, and the
-full-record daily CWD, PCWD, and CWS series.
+the ET--PET calibration, CWD-bin distributions, and the full-record daily CWD,
+PCWD, and CWS series in sequence.
 
 The uncorrected latent heat variable (`le`, FLUXNET `LE_F_MDS`) is converted to
 observed ET in millimetres. At each site, valid observed ET and
@@ -252,29 +239,10 @@ ggplot(correlation_long, aes(correlation, sitename, color = relationship)) +
   theme(panel.grid.major.y = element_blank())
 ```
 
-## Per-site diagnostics {.tabset .tabset-pills}
 
-Choose a site and then a nested plot tab to inspect its CWD-binned ET--PET
-calibration, the corresponding within-bin flux distributions, or the complete
-daily time series. These nested R Markdown tabsets provide the same folded
-per-site organization as Quarto panel tabsets while retaining an installable
-R-package vignette. The three cumulative water variables are overlaid in one
-horizontally extended panel so that their timing can be compared directly.
+## Per-site diagnostics
 
-```{r site-links, results='asis'}
-site_anchor <- function(site) {
-  tolower(gsub("[^A-Za-z0-9]+", "-", site))
-}
-cat('<div class="site-links" aria-label="Site shortcuts">\n')
-for (site in site_order) {
-  cat(sprintf(
-    '<a href="#%s" data-toggle="tab">%s</a>\n',
-    site_anchor(site),
-    site
-  ))
-}
-cat('</div>\n')
-```
+::: {.panel-tabset}
 
 ```{r site-tabs, results='asis', fig.width=10.5, fig.height=4.2}
 for (site in site_order) {
@@ -288,8 +256,8 @@ for (site in site_order) {
     site_meta$pet_calibration_median_bias_mm
   )
 
-  cat("\n### ", site, " {.tabset}\n\n", sep = "")
-  cat("#### Observed ET versus Priestley--Taylor PET\n\n")
+  cat("\n### ", site, "\n\n", sep = "")
+  # cat("#### Observed ET versus Priestley--Taylor PET\n\n")
 
   et_pet <- site_daily |>
     filter(
@@ -363,7 +331,7 @@ for (site in site_order) {
     guides(color = guide_legend(override.aes = list(size = 3, alpha = 1)))
   print(et_pet_plot)
 
-  cat("\n\n#### Flux distributions by CWD bin\n\n")
+  # cat("\n\n#### Flux distributions by CWD bin\n\n")
 
   flux_by_bin <- site_daily |>
     filter(
@@ -419,7 +387,7 @@ for (site in site_order) {
     theme(plot.margin = margin(t = 12, r = 5.5, b = 5.5, l = 5.5))
   print(flux_boxplot)
 
-  cat("\n\n#### Daily CWD, PCWD, and CWS\n\n")
+  # cat("\n\n#### Daily CWD, PCWD, and CWS\n\n")
 
   daily_long <- site_daily |>
     select(date, cwd_mm, pcwd_mm, cws_mm) |>
@@ -461,3 +429,4 @@ for (site in site_order) {
   cat("\n\n")
 }
 ```
+:::
