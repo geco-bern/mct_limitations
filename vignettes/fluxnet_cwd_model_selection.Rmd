@@ -44,7 +44,7 @@ if (has_results) {
   site_order <- sort(result$site_selection$sitename)
 }
 
-tricolore_hue <- 0.55
+tricolore_hue <- 0.35
 tricolore_breaks <- 4L
 tricolore_chroma <- 1
 tricolore_lightness <- 1
@@ -121,7 +121,7 @@ as a complementary check on predictive skill.
 
 ## Annual data used for inference
 
-The analysis unit is one site-year. For year (t):
+The analysis unit is one site-year. For year $t$:
 
 - $D_t$ is the annual maximum CWD calculated from observed ET;
 - $P_t$ is the annual maximum PCWD calculated with the site's calibrated
@@ -137,13 +137,13 @@ has at least 10 complete annual triples.
 
 The three observation models are
 
-\[
+$$
 \begin{aligned}
   A:\quad D_t &= aP_t + e_t,\\
   B:\quad D_t &= \min(aP_t,S_0) + e_t,\\
   C:\quad D_t &= \min(aP_t,bR_{t-1}) + e_t.
 \end{aligned}
-\]
+$$
 
 There is no additive intercept. The physical parameters satisfy
 $a\geq0$, $b\geq0$, and $S_0\geq0$. For likelihood calculation,
@@ -176,10 +176,10 @@ so B or C can reduce exactly to A without assigning an arbitrary finite limit.
 For a pair labelled model A and model B, the observed signed likelihood-ratio
 contrast is
 
-\[
+$$
   T_{B-A}=2\{\ell_B(\widehat\theta_B)-
                  \ell_A(\widehat\theta_A)\}.
-\]
+$$
 
 Positive values indicate a larger maximized likelihood for B; negative values
 indicate a larger likelihood for A. For each pair, the analysis performs two
@@ -315,18 +315,18 @@ ggplot(decision_counts, aes(sites, pair_label, fill = decision_code)) +
 The discrete color map uses LOYO-CV mean squared error to represent relative
 predictive skill. For model $m$, define
 
-\[
+$$
   w_m = \frac{1/\mathrm{CV\text{-}MSE}_m}
               {\sum_j 1/\mathrm{CV\text{-}MSE}_j}.
-\]
+$$
 
 The three weights lie between zero and one and sum to one. Along an edge that
 compares models X and Y, Y's conditional coordinate is
 
-\[
+$$
   q_{Y\mid XY}=\frac{w_Y}{w_X+w_Y}
               =\frac{\mathrm{MSE}_X}{\mathrm{MSE}_X+\mathrm{MSE}_Y}.
-\]
+$$
 
 Thus, zero favours X, one favours Y, and 0.5 represents equal predictive skill.
 These are descriptive skill weights, not posterior model probabilities. The
@@ -626,54 +626,79 @@ cat(knitr::kable(site_overview, format = "html", digits = 1))
 cat("\n</div>\n")
 ```
 
-## Per-site diagnostics {.tabset .tabset-pills}
+## Per-site diagnostics
 
-Each tab shows only the held-out prediction diagnostic for one site. Observed
-CWD is on the y-axis, and the subtitle reports the out-of-sample $R^2$ from
+Each tab compares held-out predictions from all three tested models for one
+site, using the same axis limits and year colors across panels. Each panel is
+titled with its model and reports its own out-of-sample $R^2$ and RMSE. The
+selected model is labelled explicitly and highlighted with a blue border.
+Observed CWD is on the y-axis. The $R^2$ comes from
 leave-one-year-out cross-validation,
 $R^2_{\mathrm{CV}}=1-\sum_t(D_t-\widehat D_{t,-t})^2/
 \sum_t(D_t-\overline D)^2$. Because every prediction is held out, this value
-can be negative when the selected model predicts less well than the observed
+can be negative when a model predicts less well than the observed
 site mean.
 
-```{r site-tabs, results='asis', fig.width=9.5, fig.height=6.5}
+::: {.panel-tabset}
+
+```{r site-tabs, results='asis', fig.width=12, fig.height=5.5, out.width='100%'}
 for (site in site_order) {
   site_selection <- result$site_selection |>
     filter(sitename == site)
-  selected_cv_prediction <- result$cv_predictions |>
-    filter(
-      sitename == site,
-      model_id == site_selection$selected_model_id
+  site_cv_predictions <- result$cv_predictions |>
+    filter(sitename == site)
+  model_diagnostics <- site_cv_predictions |>
+    group_by(model_id) |>
+    summarise(
+      total_sum_squares = sum((observed_cwd_mm - mean(observed_cwd_mm))^2),
+      residual_sum_squares = sum((observed_cwd_mm - predicted_cwd_mm)^2),
+      cv_rmse_mm = sqrt(mean((observed_cwd_mm - predicted_cwd_mm)^2)),
+      .groups = "drop"
+    ) |>
+    left_join(result$model_definitions, by = "model_id") |>
+    mutate(
+      model_order = match(model_id, result$model_definitions$model_id),
+      selected = model_id == site_selection$selected_model_id,
+      cv_r_squared = if_else(
+        total_sum_squares > 0,
+        1 - residual_sum_squares / total_sum_squares,
+        NA_real_
+      ),
+      r_squared_text = if_else(
+        is.finite(cv_r_squared), sprintf("%.2f", cv_r_squared), "not defined"
+      ),
+      model_title = paste0(
+        LETTERS[model_order], ": ", model_label, "\n",
+        if_else(selected, "SELECTED MODEL", "Candidate model"), "\n",
+        sprintf("LOYO-CV R² = %s; RMSE = %.1f mm", r_squared_text, cv_rmse_mm)
+      )
+    ) |>
+    arrange(model_order) |>
+    mutate(model_title = factor(model_title, levels = model_title))
+  site_cv_predictions <- site_cv_predictions |>
+    left_join(
+      model_diagnostics |> select(model_id, model_title),
+      by = "model_id"
     )
-  observed <- selected_cv_prediction$observed_cwd_mm
-  predicted <- selected_cv_prediction$predicted_cwd_mm
-  total_sum_squares <- sum((observed - mean(observed))^2)
-  cv_r_squared <- if (total_sum_squares > 0) {
-    1 - sum((observed - predicted)^2) / total_sum_squares
-  } else {
-    NA_real_
-  }
-  r_squared_text <- if (is.finite(cv_r_squared)) {
-    sprintf("%.2f", cv_r_squared)
-  } else {
-    "not defined"
-  }
 
   cat("\n### ", site, "\n\n", sep = "")
-  plot_limit <- max(
-    observed,
-    predicted,
-    0
-  )
-  plot_minimum <- min(
-    observed,
-    predicted,
+  plot_limits <- range(
+    site_cv_predictions$observed_cwd_mm,
+    site_cv_predictions$predicted_cwd_mm,
     0
   )
   fit_plot <- ggplot(
-    selected_cv_prediction,
+    site_cv_predictions,
     aes(predicted_cwd_mm, observed_cwd_mm, color = year)
   ) +
+    geom_rect(
+      data = model_diagnostics |> filter(selected),
+      aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf),
+      inherit.aes = FALSE,
+      fill = NA,
+      color = "#0072B2",
+      linewidth = 1.2
+    ) +
     geom_abline(
       slope = 1,
       intercept = 0,
@@ -685,30 +710,29 @@ for (site in site_order) {
     scale_color_viridis_c(
       option = "D",
       end = 0.9,
-      breaks = range(selected_cv_prediction$year),
-      labels = range(selected_cv_prediction$year),
+      breaks = range(site_cv_predictions$year),
+      labels = range(site_cv_predictions$year),
       guide = guide_colorbar(barwidth = 9)
     ) +
-    coord_equal(
-      xlim = c(plot_minimum, plot_limit),
-      ylim = c(plot_minimum, plot_limit)
-    ) +
+    facet_wrap(vars(model_title), nrow = 1) +
+    coord_equal(xlim = plot_limits, ylim = plot_limits) +
     labs(
-      title = paste(site, site_selection$selected_model_label),
-      subtitle = sprintf(
-        "LOYO-CV R² = %s; RMSE = %.1f mm",
-        r_squared_text,
-        site_selection$selected_cv_rmse_mm
-      ),
-      x = "Held-out selected-model prediction (mm)",
+      title = site,
+      x = "Held-out model prediction (mm)",
       y = "Observed annual maximum CWD (mm)",
       color = "Year",
       caption = "Dotted line: 1:1; every plotted prediction is out of sample"
+    ) +
+    theme(
+      strip.text = element_text(size = 9, lineheight = 1.2),
+      panel.spacing = grid::unit(1, "lines")
     )
   print(fit_plot)
   cat("\n\n")
 }
 ```
+
+:::
 
 ## Interpretation guardrails
 

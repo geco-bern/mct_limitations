@@ -88,22 +88,22 @@ observed ET in millimetres. At each site, valid observed ET and
 Priestley--Taylor PET days are divided into equal-width CWD bins. The initial
 scalar is defined by the lowest-CWD bin as
 
-\[
-  \alpha_{site} =
-  \frac{\operatorname{median}(\mathrm{ET}_{obs})}
-       {\operatorname{median}(\mathrm{PET}_{PT})},
+$$
+  \alpha_{\mathrm{site}} =
+  \frac{\operatorname{median}(\mathrm{ET}_{\mathrm{obs}})}
+       {\operatorname{median}(\mathrm{PET}_{\mathrm{PT}})},
   \qquad
-  \mathrm{PET}_{site} = \alpha_{site}\,\mathrm{PET}_{PT}.
-\]
+  \mathrm{PET}_{\mathrm{site}} = \alpha_{\mathrm{site}}\,\mathrm{PET}_{\mathrm{PT}}.
+$$
 
 Bins 2 through 5 are then inspected sequentially. Whenever median observed ET
-is greater than median scaled PET in bin (i), the scalar is recalculated as
+is greater than median scaled PET in bin $i$, the scalar is recalculated as
 
-\[
+$$
   \alpha_i =
-  \frac{\operatorname{median}(\mathrm{ET}_{obs}\mid b \le i)}
-       {\operatorname{median}(\mathrm{PET}_{PT}\mid b \le i)}.
-\]
+  \frac{\operatorname{median}(\mathrm{ET}_{\mathrm{obs}}\mid b \le i)}
+       {\operatorname{median}(\mathrm{PET}_{\mathrm{PT}}\mid b \le i)}.
+$$
 
 The final scalar therefore median-matches all observations from bin 1 through
 the last bin that triggered a refit. In the limiting case this includes all
